@@ -57,7 +57,9 @@ export default function ChannelsClient({
   const [isSaving, setIsSaving] = useState(false);
 
   const activeChannels = Number(emailEnabled) + Number(telegramEnabled);
-  const botHandle = botUsername.startsWith("@") ? botUsername : `@${botUsername}`;
+  const botHandle = botUsername.startsWith("@")
+    ? botUsername
+    : `@${botUsername}`;
 
   const saveSettings = async () => {
     if (isDemo) {
@@ -201,9 +203,6 @@ export default function ChannelsClient({
                     <h3 className="text-base font-semibold text-white">
                       Cấu hình Email
                     </h3>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Chọn địa chỉ email sẽ nhận thông báo reminder.
-                    </p>
                   </div>
                   <Mail className="h-5 w-5 text-sky-300" />
                 </div>
@@ -244,9 +243,6 @@ export default function ChannelsClient({
                     <h3 className="text-base font-semibold text-white">
                       Cấu hình Telegram
                     </h3>
-                    <p className="mt-1 text-sm text-slate-400">
-                      Kết nối chat để bot gửi reminder đúng người nhận.
-                    </p>
                   </div>
                   <MessageCircle className="h-5 w-5 text-sky-300" />
                 </div>
@@ -294,7 +290,9 @@ export default function ChannelsClient({
                       <input
                         className="input-mystic"
                         value={telegramChatId}
-                        onChange={(event) => setTelegramChatId(event.target.value)}
+                        onChange={(event) =>
+                          setTelegramChatId(event.target.value)
+                        }
                         placeholder="123456789"
                       />
                     </label>
