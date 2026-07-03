@@ -22,7 +22,9 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -33,6 +35,12 @@ export default function RegisterPage() {
     setLoading(true);
     setError("");
     setMessage("");
+
+    if (password !== confirmPassword) {
+      setError("Xác nhận mật khẩu không khớp.");
+      setLoading(false);
+      return;
+    }
 
     try {
       const response = await fetch("/api/auth/register", {
@@ -167,6 +175,39 @@ export default function RegisterPage() {
               aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
             >
               {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        </label>
+
+        <label className="block">
+          <span className="mb-2 block text-sm font-medium text-slate-300">
+            Nhập lại mật khẩu
+          </span>
+          <div className="relative">
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              required
+              minLength={6}
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="input-mystic pr-12"
+              placeholder="Nhập lại mật khẩu"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setShowConfirmPassword((current) => !current)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-white"
+              aria-label={
+                showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+              }
+            >
+              {showConfirmPassword ? (
                 <EyeOff className="h-4 w-4" />
               ) : (
                 <Eye className="h-4 w-4" />
