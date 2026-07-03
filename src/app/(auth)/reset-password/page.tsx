@@ -7,6 +7,8 @@ import { ArrowLeft } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 const passwordMaxLength = 128;
+const invalidRecoveryMessage =
+  "Lien ket dat lai mat khau khong hop le hoac da het han.";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -21,6 +23,16 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     let isMounted = true;
     const supabase = createClient();
+
+    const handleInvalidRecovery = async () => {
+      await supabase.auth.signOut();
+
+      if (!isMounted) return;
+
+      setCanReset(false);
+      setError(invalidRecoveryMessage);
+      setCheckingSession(false);
+    };
 
     const initializeRecovery = async () => {
       const queryParams = new URLSearchParams(window.location.search);
@@ -44,8 +56,7 @@ export default function ResetPasswordPage() {
         if (!isMounted) return;
 
         if (verifyError) {
-          setError("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
-          setCheckingSession(false);
+          await handleInvalidRecovery();
           return;
         }
 
@@ -66,8 +77,7 @@ export default function ResetPasswordPage() {
         if (!isMounted) return;
 
         if (sessionError || !recoverySession) {
-          setError("Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.");
-          setCheckingSession(false);
+          await handleInvalidRecovery();
           return;
         }
 
@@ -79,14 +89,7 @@ export default function ResetPasswordPage() {
         return;
       }
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!isMounted) return;
-
-      setCanReset(Boolean(session));
-      setCheckingSession(false);
+      await handleInvalidRecovery();
     };
 
     void initializeRecovery();
@@ -100,12 +103,12 @@ export default function ResetPasswordPage() {
     event.preventDefault();
 
     if (password.length < 6) {
-      setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
+      setError("Mat khau moi phai co it nhat 6 ky tu.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Xác nhận mật khẩu không khớp.");
+      setError("Xac nhan mat khau khong khop.");
       return;
     }
 
@@ -120,15 +123,13 @@ export default function ResetPasswordPage() {
 
     if (updateError) {
       setLoading(false);
-      setError("Không thể cập nhật mật khẩu. Vui lòng thử lại.");
+      setError("Khong the cap nhat mat khau. Vui long thu lai.");
       return;
     }
 
     await supabase.auth.signOut();
     setLoading(false);
-    setSuccess(
-      "Đổi mật khẩu thành công. Hệ thống sẽ chuyển về trang đăng nhập.",
-    );
+    setSuccess("Doi mat khau thanh cong. He thong se chuyen ve trang dang nhap.");
     window.setTimeout(() => {
       router.push("/login");
       router.refresh();
@@ -138,9 +139,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="glass-card rounded-2xl p-6 sm:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Đặt lại mật khẩu</h1>
+        <h1 className="text-2xl font-bold text-white">Dat lai mat khau</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Nhập mật khẩu mới sau khi xác nhận qua email.
+          Nhap mat khau moi sau khi xac nhan qua email.
         </p>
       </div>
 
@@ -148,20 +149,18 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           <p className="mt-4 text-sm text-slate-400">
-            Đang kiểm tra liên kết đặt lại mật khẩu...
+            Dang kiem tra lien ket dat lai mat khau...
           </p>
         </div>
       ) : !canReset ? (
         <div className="space-y-4 text-center">
-          <p className="text-sm text-white">
-            Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.
-          </p>
+          <p className="text-sm text-white">{error || invalidRecoveryMessage}</p>
           <Link
             href="/login"
             className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
-            Quay lại đăng nhập
+            Quay lai dang nhap
           </Link>
         </div>
       ) : (
@@ -180,7 +179,7 @@ export default function ResetPasswordPage() {
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-300">
-              Mật khẩu mới
+              Mat khau moi
             </span>
             <input
               type="password"
@@ -190,14 +189,14 @@ export default function ResetPasswordPage() {
                 if (error) setError("");
               }}
               maxLength={passwordMaxLength}
-              placeholder="Tối thiểu 6 ký tự"
+              placeholder="Toi thieu 6 ky tu"
               className="input-mystic"
             />
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-300">
-              Xác nhận mật khẩu mới
+              Xac nhan mat khau moi
             </span>
             <input
               type="password"
@@ -207,7 +206,7 @@ export default function ResetPasswordPage() {
                 if (error) setError("");
               }}
               maxLength={passwordMaxLength}
-              placeholder="Nhập lại mật khẩu mới"
+              placeholder="Nhap lai mat khau moi"
               className="input-mystic"
             />
           </label>
@@ -217,7 +216,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="btn-primary mt-2 w-full disabled:opacity-70"
           >
-            {loading ? "Đang cập nhật..." : "Lưu mật khẩu mới"}
+            {loading ? "Dang cap nhat..." : "Luu mat khau moi"}
           </button>
         </form>
       )}
