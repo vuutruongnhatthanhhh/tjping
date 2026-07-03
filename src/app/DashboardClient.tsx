@@ -233,7 +233,7 @@ export default function DashboardClient({
 
           <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <StatCard
-              title="Lời nhắc pending"
+              title="Lời nhắc chờ gửi"
               value={isDemo ? "24" : String(pendingCount)}
               subtitle="Đang chờ gửi"
               icon={<Clock3 className="h-6 w-6" />}
@@ -562,18 +562,18 @@ function StatusBadge({ status }: { status: string }) {
   const config =
     status === "sent"
       ? {
-          label: "sent",
+          label: "Đã gửi",
           icon: <CheckCircle2 className="h-3.5 w-3.5" />,
           className: "border-emerald-400/20 bg-emerald-500/10 text-emerald-300",
         }
       : status === "failed"
         ? {
-            label: "failed",
+            label: "Lỗi",
             icon: <XCircle className="h-3.5 w-3.5" />,
             className: "border-red-400/20 bg-red-500/10 text-red-300",
           }
         : {
-            label: "pending",
+            label: "Chờ gửi",
             icon: <Clock3 className="h-3.5 w-3.5" />,
             className: "border-sky-400/20 bg-sky-500/10 text-sky-200",
           };

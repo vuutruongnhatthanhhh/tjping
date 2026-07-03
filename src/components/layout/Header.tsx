@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Bell, Menu, Plus } from "lucide-react";
 
 interface HeaderProps {
@@ -41,13 +42,14 @@ export default function Header({ onMenuToggle, title, subtitle }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-2">
-        <button
+        <Link
+          href="/reminders"
           className="hidden h-10 items-center gap-2 rounded-xl border px-4 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-500/10 sm:flex"
           style={{ borderColor: "rgba(96,165,250,0.18)" }}
         >
           <Plus className="h-4 w-4" />
           Tạo nhắc
-        </button>
+        </Link>
         <button
           className="relative flex h-10 w-10 items-center justify-center rounded-xl transition-colors"
           style={{

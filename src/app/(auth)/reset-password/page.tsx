@@ -8,7 +8,7 @@ import { createClient } from "@/lib/supabase/client";
 
 const passwordMaxLength = 128;
 const invalidRecoveryMessage =
-  "Lien ket dat lai mat khau khong hop le hoac da het han.";
+  "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -103,12 +103,12 @@ export default function ResetPasswordPage() {
     event.preventDefault();
 
     if (password.length < 6) {
-      setError("Mat khau moi phai co it nhat 6 ky tu.");
+      setError("Mật khẩu mới phải có ít nhất 6 ký tự.");
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Xac nhan mat khau khong khop.");
+      setError("Xác nhận mật khẩu không khớp.");
       return;
     }
 
@@ -123,13 +123,13 @@ export default function ResetPasswordPage() {
 
     if (updateError) {
       setLoading(false);
-      setError("Khong the cap nhat mat khau. Vui long thu lai.");
+      setError("Không thể cập nhật mật khẩu. Vui lòng thử lại.");
       return;
     }
 
     await supabase.auth.signOut();
     setLoading(false);
-    setSuccess("Doi mat khau thanh cong. He thong se chuyen ve trang dang nhap.");
+    setSuccess("Đổi mật khẩu thành công. Hệ thống sẽ chuyển về trang đăng nhập.");
     window.setTimeout(() => {
       router.push("/login");
       router.refresh();
@@ -139,9 +139,9 @@ export default function ResetPasswordPage() {
   return (
     <div className="glass-card rounded-2xl p-6 sm:p-8">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-white">Dat lai mat khau</h1>
+        <h1 className="text-2xl font-bold text-white">Đặt lại mật khẩu</h1>
         <p className="mt-1 text-sm text-slate-400">
-          Nhap mat khau moi sau khi xac nhan qua email.
+          Nhập mật khẩu mới sau khi xác nhận qua email.
         </p>
       </div>
 
@@ -149,7 +149,7 @@ export default function ResetPasswordPage() {
         <div className="flex flex-col items-center justify-center py-8">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-white/30 border-t-white" />
           <p className="mt-4 text-sm text-slate-400">
-            Dang kiem tra lien ket dat lai mat khau...
+            Đang kiểm tra liên kết đặt lại mật khẩu...
           </p>
         </div>
       ) : !canReset ? (
@@ -160,7 +160,7 @@ export default function ResetPasswordPage() {
             className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
-            Quay lai dang nhap
+            Quay lại đăng nhập
           </Link>
         </div>
       ) : (
@@ -179,7 +179,7 @@ export default function ResetPasswordPage() {
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-300">
-              Mat khau moi
+              Mật khẩu mới
             </span>
             <input
               type="password"
@@ -189,14 +189,14 @@ export default function ResetPasswordPage() {
                 if (error) setError("");
               }}
               maxLength={passwordMaxLength}
-              placeholder="Toi thieu 6 ky tu"
+              placeholder="Tối thiểu 6 ký tự"
               className="input-mystic"
             />
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-300">
-              Xac nhan mat khau moi
+              Xác nhận mật khẩu mới
             </span>
             <input
               type="password"
@@ -206,7 +206,7 @@ export default function ResetPasswordPage() {
                 if (error) setError("");
               }}
               maxLength={passwordMaxLength}
-              placeholder="Nhap lai mat khau moi"
+              placeholder="Nhập lại mật khẩu mới"
               className="input-mystic"
             />
           </label>
@@ -216,7 +216,7 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="btn-primary mt-2 w-full disabled:opacity-70"
           >
-            {loading ? "Dang cap nhat..." : "Luu mat khau moi"}
+            {loading ? "Đang cập nhật..." : "Lưu mật khẩu mới"}
           </button>
         </form>
       )}

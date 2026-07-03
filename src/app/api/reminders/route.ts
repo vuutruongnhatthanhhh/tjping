@@ -13,6 +13,30 @@ function parseVietnameseDateTime(dateValue: string, timeValue: string) {
   return new Date(year, month - 1, day, hour, minute);
 }
 
+function buildReminderSteps(
+  reminderId: string,
+  userId: string,
+  remindAt: Date,
+  stepTypes: string[],
+) {
+  return stepTypes.map((stepType) => {
+    const scheduledAt = new Date(remindAt);
+
+    if (stepType === "one_day_before") {
+      scheduledAt.setDate(scheduledAt.getDate() - 1);
+    } else if (stepType === "one_hour_before") {
+      scheduledAt.setHours(scheduledAt.getHours() - 1);
+    }
+
+    return {
+      reminder_id: reminderId,
+      user_id: userId,
+      step_type: stepType,
+      scheduled_at: scheduledAt.toISOString(),
+    };
+  });
+}
+
 export async function POST(request: Request) {
   if (!isSupabaseConfigured()) {
     return NextResponse.json(
@@ -37,11 +61,12 @@ export async function POST(request: Request) {
   const time = String(formData.get("time") || "").trim();
   const repeatType = String(formData.get("repeatType") || "once");
   const channels = formData.getAll("channels").map(String);
+  const stepTypes = formData.getAll("stepTypes").map(String);
   const remindAt = parseVietnameseDateTime(date, time);
 
-  if (!title || !remindAt || channels.length === 0) {
+  if (!title || !remindAt || channels.length === 0 || stepTypes.length === 0) {
     return NextResponse.json(
-      { error: "Thiếu tiêu đề, thời gian hoặc kênh gửi." },
+      { error: "Thiếu tiêu đề, thời gian, kênh gửi hoặc mốc nhắc." },
       { status: 400 },
     );
   }
@@ -67,31 +92,16 @@ export async function POST(request: Request) {
     );
   }
 
-  const oneDayBefore = new Date(remindAt);
-  oneDayBefore.setDate(oneDayBefore.getDate() - 1);
-  const oneHourBefore = new Date(remindAt);
-  oneHourBefore.setHours(oneHourBefore.getHours() - 1);
+  const { error: stepError } = await supabase
+    .from("reminder_steps")
+    .insert(buildReminderSteps(reminder.id, user.id, remindAt, stepTypes));
 
-  await supabase.from("reminder_steps").insert([
-    {
-      reminder_id: reminder.id,
-      user_id: user.id,
-      step_type: "one_day_before",
-      scheduled_at: oneDayBefore.toISOString(),
-    },
-    {
-      reminder_id: reminder.id,
-      user_id: user.id,
-      step_type: "one_hour_before",
-      scheduled_at: oneHourBefore.toISOString(),
-    },
-    {
-      reminder_id: reminder.id,
-      user_id: user.id,
-      step_type: "on_time",
-      scheduled_at: remindAt.toISOString(),
-    },
-  ]);
+  if (stepError) {
+    return NextResponse.json(
+      { error: "Không thể tạo các bước nhắc." },
+      { status: 500 },
+    );
+  }
 
   return NextResponse.json({ id: reminder.id });
 }
