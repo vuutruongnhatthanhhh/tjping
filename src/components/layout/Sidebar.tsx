@@ -12,6 +12,7 @@ import {
   X,
 } from "lucide-react";
 import Logo from "@/components/brand/Logo";
+import { createClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import AccountSettingsModal from "./AccountSettingsModal";
 
@@ -56,6 +57,14 @@ export default function Sidebar({
     onClose();
   };
 
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    onClose();
+    router.push("/login");
+    router.refresh();
+  };
+
   return (
     <>
       <aside
@@ -73,13 +82,14 @@ export default function Sidebar({
               <span className="text-lg font-bold text-sky-400">Ping</span>
             </div>
           </div>
-          <SidebarNavCollapsed
-            pathname={pathname}
-            userEmail={userEmail}
-            userName={userName}
-            userInitial={userInitial}
-            onOpenAccount={openAccountModal}
-          />
+        <SidebarNavCollapsed
+          pathname={pathname}
+          userEmail={userEmail}
+          userName={userName}
+          userInitial={userInitial}
+          onOpenAccount={openAccountModal}
+          onLogout={handleLogout}
+        />
         </div>
       </aside>
 
@@ -108,6 +118,7 @@ export default function Sidebar({
           userName={userName}
           userInitial={userInitial}
           onOpenAccount={openAccountModal}
+          onLogout={handleLogout}
         />
       </aside>
 
@@ -130,6 +141,7 @@ function SidebarContent({
   userName,
   userInitial,
   onOpenAccount,
+  onLogout,
 }: {
   pathname: string;
   onClose: () => void;
@@ -137,6 +149,7 @@ function SidebarContent({
   userName?: string;
   userInitial: string;
   onOpenAccount: () => void;
+  onLogout: () => void;
 }) {
   return (
     <div className="flex h-full flex-col">
@@ -197,13 +210,14 @@ function SidebarContent({
           </div>
         </button>
 
-        <Link
-          href="/logout"
+        <button
+          type="button"
+          onClick={onLogout}
           className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10"
         >
           <LogOut className="h-5 w-5" />
           Đăng xuất
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -215,12 +229,14 @@ function SidebarNavCollapsed({
   userName,
   userInitial,
   onOpenAccount,
+  onLogout,
 }: {
   pathname: string;
   userEmail?: string;
   userName?: string;
   userInitial: string;
   onOpenAccount: () => void;
+  onLogout: () => void;
 }) {
   return (
     <>
@@ -284,8 +300,9 @@ function SidebarNavCollapsed({
           </div>
         </button>
 
-        <Link
-          href="/logout"
+        <button
+          type="button"
+          onClick={onLogout}
           className="mt-3 flex w-full items-center rounded-xl px-[14px] py-2.5 text-sm font-medium text-red-300 transition-all duration-300 hover:bg-red-500/10 group-hover/sidebar:px-3"
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
@@ -293,7 +310,7 @@ function SidebarNavCollapsed({
           <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover/sidebar:max-w-[200px] group-hover/sidebar:opacity-100">
             Đăng xuất
           </span>
-        </Link>
+        </button>
       </div>
     </>
   );
