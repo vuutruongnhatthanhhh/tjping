@@ -162,11 +162,6 @@ export default function ChannelsClient({
                 <h2 className="max-w-3xl text-3xl font-bold leading-tight text-white sm:text-4xl">
                   Chọn nơi sẽ nhận thông báo nhắc việc của từng tài khoản.
                 </h2>
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-400">
-                  Email dùng để nhận reminder qua hộp thư. Telegram dùng bot
-                  chung của TJPing, nên chỉ cần kết nối đúng chat ID hoặc
-                  username của người dùng.
-                </p>
               </div>
             </div>
           </section>
