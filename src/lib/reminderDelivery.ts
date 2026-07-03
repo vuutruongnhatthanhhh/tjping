@@ -105,9 +105,12 @@ export function buildReminderTelegramText({
 }) {
   const lines = [
     `<b>${escapeHtml(reminder.title)}</b>`,
-    reminder.content.trim() ? escapeHtml(reminder.content.trim()) : "",
-    `Mốc nhắc: ${escapeHtml(mapStepTypeLabel(stepType))}`,
-    `Thời gian: ${escapeHtml(formatReminderDateTime(reminder.remindAt))}`,
+    reminder.content.trim()
+      ? `Nội dung: ${escapeHtml(reminder.content.trim())}`
+      : "",
+    `(${escapeHtml(mapStepTypeLabel(stepType))} - ${escapeHtml(
+      formatReminderDateTime(reminder.remindAt),
+    )})`,
   ].filter(Boolean);
 
   return lines.join("\n\n");
