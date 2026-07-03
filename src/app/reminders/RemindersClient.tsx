@@ -111,6 +111,13 @@ const emptyForm = (): ReminderFormState => ({
   stepTypes: ["on_time"],
 });
 
+const hourOptions = Array.from({ length: 24 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
+const minuteOptions = Array.from({ length: 60 }, (_, index) =>
+  String(index).padStart(2, "0"),
+);
+
 export default function RemindersClient({
   userEmail,
   userName,
@@ -720,18 +727,51 @@ export default function RemindersClient({
                     <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
                       Giờ nhắc
                     </span>
-                    <input
-                      type="time"
-                      className="input-mystic"
-                      value={formState.time}
-                      onChange={(event) =>
-                        setFormState((current) => ({
-                          ...current,
-                          time: event.target.value,
-                        }))
-                      }
-                      disabled={isSaving || isDemo}
-                    />
+                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+                      <select
+                        className="input-mystic"
+                        value={getTimePart(formState.time, "hour")}
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            time: buildTimeValue(
+                              event.target.value,
+                              getTimePart(current.time, "minute"),
+                            ),
+                          }))
+                        }
+                        disabled={isSaving || isDemo}
+                      >
+                        {hourOptions.map((hour) => (
+                          <option key={hour} value={hour}>
+                            {hour}
+                          </option>
+                        ))}
+                      </select>
+                      <span className="text-sm font-semibold text-slate-400">
+                        :
+                      </span>
+                      <select
+                        className="input-mystic"
+                        value={getTimePart(formState.time, "minute")}
+                        onChange={(event) =>
+                          setFormState((current) => ({
+                            ...current,
+                            time: buildTimeValue(
+                              getTimePart(current.time, "hour"),
+                              event.target.value,
+                            ),
+                          }))
+                        }
+                        disabled={isSaving || isDemo}
+                      >
+                        {minuteOptions.map((minute) => (
+                          <option key={minute} value={minute}>
+                            {minute}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </label>
 
                   <label className="block">
@@ -919,6 +959,15 @@ function formatTime(value: string) {
     hourCycle: "h23",
     timeZone: "Asia/Bangkok",
   }).format(new Date(value));
+}
+
+function getTimePart(value: string, part: "hour" | "minute") {
+  const [hour = "09", minute = "00"] = value.split(":");
+  return part === "hour" ? hour : minute;
+}
+
+function buildTimeValue(hour: string, minute: string) {
+  return `${hour}:${minute}`;
 }
 
 function getBangkokDateTimeParts(value: string) {

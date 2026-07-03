@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronRight,
@@ -39,7 +39,7 @@ const navItems = [
     label: "Kênh gửi",
     icon: <Send className="h-5 w-5" />,
   },
-];
+] as const;
 
 export default function Sidebar({
   isOpen,
@@ -52,6 +52,12 @@ export default function Sidebar({
   const [showAccountModal, setShowAccountModal] = useState(false);
   const userInitial = (userName || userEmail || "U")[0].toUpperCase();
 
+  useEffect(() => {
+    navItems.forEach((item) => {
+      router.prefetch(item.href);
+    });
+  }, [router]);
+
   const openAccountModal = () => {
     setShowAccountModal(true);
     onClose();
@@ -63,6 +69,14 @@ export default function Sidebar({
     onClose();
     router.push("/login");
     router.refresh();
+  };
+
+  const handleMobileNavigate = (href: string) => {
+    if (pathname !== href) {
+      router.push(href);
+    }
+
+    onClose();
   };
 
   return (
@@ -82,14 +96,14 @@ export default function Sidebar({
               <span className="text-lg font-bold text-sky-400">Ping</span>
             </div>
           </div>
-        <SidebarNavCollapsed
-          pathname={pathname}
-          userEmail={userEmail}
-          userName={userName}
-          userInitial={userInitial}
-          onOpenAccount={openAccountModal}
-          onLogout={handleLogout}
-        />
+          <SidebarNavCollapsed
+            pathname={pathname}
+            userEmail={userEmail}
+            userName={userName}
+            userInitial={userInitial}
+            onOpenAccount={openAccountModal}
+            onLogout={handleLogout}
+          />
         </div>
       </aside>
 
@@ -114,6 +128,7 @@ export default function Sidebar({
         <SidebarContent
           pathname={pathname}
           onClose={onClose}
+          onNavigate={handleMobileNavigate}
           userEmail={userEmail}
           userName={userName}
           userInitial={userInitial}
@@ -137,6 +152,7 @@ export default function Sidebar({
 function SidebarContent({
   pathname,
   onClose,
+  onNavigate,
   userEmail,
   userName,
   userInitial,
@@ -145,6 +161,7 @@ function SidebarContent({
 }: {
   pathname: string;
   onClose: () => void;
+  onNavigate: (href: string) => void;
   userEmail?: string;
   userName?: string;
   userInitial: string;
@@ -177,7 +194,10 @@ function SidebarContent({
             <Link
               key={item.href}
               href={item.href}
-              onClick={onClose}
+              onClick={(event) => {
+                event.preventDefault();
+                onNavigate(item.href);
+              }}
               className={cn("sidebar-item group", isActive && "active")}
             >
               <span className="flex-shrink-0">{item.icon}</span>
