@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { Eye, EyeOff, LogIn } from "lucide-react";
 import type { AuthError } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -104,11 +105,7 @@ export default function LoginPage() {
         disabled={loading || googleLoading}
         className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-sky-400/15 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white"
       >
-        {googleLoading ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-        ) : (
-          <GoogleIcon />
-        )}
+        {googleLoading ? <ButtonSpinner /> : <GoogleIcon />}
         Đăng nhập bằng Google
       </button>
 
@@ -170,8 +167,8 @@ export default function LoginPage() {
           disabled={loading || googleLoading}
           className="btn-primary w-full disabled:opacity-70"
         >
-          <LogIn className="h-4 w-4" />
-          {loading ? "Đang đăng nhập..." : "Đăng nhập"}
+          {loading ? <ButtonSpinner /> : <LogIn className="h-4 w-4" />}
+          Đăng nhập
         </button>
       </form>
 

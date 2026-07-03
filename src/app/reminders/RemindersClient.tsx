@@ -18,6 +18,7 @@ import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
 import DateInput from "@/components/ui/DateInput";
 import ModalOverlay from "@/components/ui/ModalOverlay";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import StatCard from "@/components/ui/StatCard";
 import { useToast } from "@/components/ui/ToastProvider";
 import { formatDate } from "@/lib/utils";
@@ -874,11 +875,8 @@ export default function RemindersClient({
                   disabled={isSaving || isDemo}
                   className="btn-primary justify-center disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  {isSaving
-                    ? "Đang lưu..."
-                    : editingReminder
-                      ? "Lưu cập nhật"
-                      : "Tạo lời nhắc"}
+                  {isSaving && <ButtonSpinner />}
+                  {editingReminder ? "Lưu cập nhật" : "Tạo lời nhắc"}
                 </button>
               </div>
             </div>
@@ -912,9 +910,10 @@ export default function RemindersClient({
               type="button"
               onClick={handleDelete}
               disabled={isDeleting || isDemo}
-              className="inline-flex items-center justify-center rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-red-500 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-red-400 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isDeleting ? "Đang xóa..." : "Xóa lời nhắc"}
+              {isDeleting && <ButtonSpinner />}
+              Xóa lời nhắc
             </button>
           </div>
         </ModalOverlay>

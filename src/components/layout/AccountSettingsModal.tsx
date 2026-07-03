@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Eye, EyeOff, Mail, Save, User2, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import ModalOverlay from "@/components/ui/ModalOverlay";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 
 interface AccountSettingsModalProps {
   userEmail?: string;
@@ -222,11 +223,7 @@ export default function AccountSettingsModal({
               disabled={profileLoading}
               className="btn-primary inline-flex items-center gap-2 disabled:opacity-70"
             >
-              {profileLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
+              {profileLoading ? <ButtonSpinner /> : <Save className="h-4 w-4" />}
               Lưu thông tin
             </button>
           </div>
@@ -306,11 +303,7 @@ export default function AccountSettingsModal({
               disabled={passwordLoading}
               className="btn-primary inline-flex items-center gap-2 disabled:opacity-70"
             >
-              {passwordLoading ? (
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-              ) : (
-                <Save className="h-4 w-4" />
-              )}
+              {passwordLoading ? <ButtonSpinner /> : <Save className="h-4 w-4" />}
               Lưu mật khẩu mới
             </button>
           </div>

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Eye, EyeOff, Mail, UserPlus } from "lucide-react";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "form" | "sent";
@@ -131,11 +132,7 @@ export default function RegisterPage() {
         disabled={loading || googleLoading}
         className="mb-4 flex w-full items-center justify-center gap-3 rounded-xl border border-sky-400/15 bg-white/[0.04] px-4 py-3 text-sm font-semibold text-white"
       >
-        {googleLoading ? (
-          <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-        ) : (
-          <GoogleIcon />
-        )}
+        {googleLoading ? <ButtonSpinner /> : <GoogleIcon />}
         Đăng ký bằng Google
       </button>
 
@@ -221,8 +218,8 @@ export default function RegisterPage() {
           disabled={loading || googleLoading}
           className="btn-primary w-full disabled:opacity-70"
         >
-          <UserPlus className="h-4 w-4" />
-          {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
+          {loading ? <ButtonSpinner /> : <UserPlus className="h-4 w-4" />}
+          Tạo tài khoản
         </button>
       </form>
 

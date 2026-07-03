@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import StatCard from "@/components/ui/StatCard";
 import { createClient } from "@/lib/supabase/client";
 import { formatDate } from "@/lib/utils";
@@ -367,7 +368,8 @@ export default function DashboardClient({
                 disabled={isSaving || isDemo}
                 className="btn-primary mt-5 w-full disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isSaving ? "Đang lưu..." : "Lưu lời nhắc"}
+                {isSaving && <ButtonSpinner />}
+                Lưu lời nhắc
               </button>
               </form>
             </div>

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, Send } from "lucide-react";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -91,11 +92,7 @@ export default function ForgotPasswordPage() {
           disabled={loading}
           className="btn-primary flex w-full items-center justify-center gap-2 disabled:opacity-70"
         >
-          {loading ? (
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-          ) : (
-            <Send className="h-4 w-4" />
-          )}
+          {loading ? <ButtonSpinner className="h-5 w-5" /> : <Send className="h-4 w-4" />}
           Gửi email đặt lại mật khẩu
         </button>
       </form>

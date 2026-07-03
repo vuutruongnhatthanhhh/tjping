@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import StatCard from "@/components/ui/StatCard";
 import { useToast } from "@/components/ui/ToastProvider";
 
@@ -357,8 +358,8 @@ export default function ChannelsClient({
             disabled={isSaving}
             className="pointer-events-auto inline-flex min-w-[160px] items-center justify-center gap-2 rounded-2xl border border-sky-300/25 bg-sky-500 px-5 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(14,165,233,0.35)] transition-all hover:bg-sky-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
-            <Save className="h-4 w-4" />
-            {isSaving ? "Đang lưu..." : "Lưu cấu hình"}
+            {isSaving ? <ButtonSpinner /> : <Save className="h-4 w-4" />}
+            Lưu cấu hình
           </button>
         </div>
       </main>

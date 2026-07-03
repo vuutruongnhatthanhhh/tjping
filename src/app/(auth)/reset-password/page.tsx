@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import type { AuthError } from "@supabase/supabase-js";
+import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import { createClient } from "@/lib/supabase/client";
 
 const passwordMaxLength = 128;
@@ -255,7 +256,8 @@ export default function ResetPasswordPage() {
             disabled={loading}
             className="btn-primary mt-2 w-full disabled:opacity-70"
           >
-            {loading ? "Đang cập nhật..." : "Lưu mật khẩu mới"}
+            {loading && <ButtonSpinner />}
+            Lưu mật khẩu mới
           </button>
         </form>
       )}
