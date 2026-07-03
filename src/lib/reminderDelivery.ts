@@ -104,17 +104,13 @@ export function buildReminderTelegramText({
   stepType: ReminderStepType;
 }) {
   const lines = [
-    `TJPing Reminder`,
-    `Tiêu đề: ${reminder.title}`,
-    `Mốc nhắc: ${mapStepTypeLabel(stepType)}`,
-    `Thời gian: ${formatReminderDateTime(reminder.remindAt)}`,
-  ];
+    `<b>${escapeHtml(reminder.title)}</b>`,
+    reminder.content.trim() ? escapeHtml(reminder.content.trim()) : "",
+    `Mốc nhắc: ${escapeHtml(mapStepTypeLabel(stepType))}`,
+    `Thời gian: ${escapeHtml(formatReminderDateTime(reminder.remindAt))}`,
+  ].filter(Boolean);
 
-  if (reminder.content.trim()) {
-    lines.push(`Nội dung: ${reminder.content.trim()}`);
-  }
-
-  return lines.join("\n");
+  return lines.join("\n\n");
 }
 
 export async function deliverReminderChannel({
@@ -166,6 +162,7 @@ export async function deliverReminderChannel({
   const result = await sendTelegramMessage({
     chatId,
     text: buildReminderTelegramText({ reminder, stepType }),
+    parseMode: "HTML",
   });
 
   return { providerMessageId: result.messageId };

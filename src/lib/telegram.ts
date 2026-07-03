@@ -9,9 +9,11 @@ interface TelegramSendMessageResult {
 export async function sendTelegramMessage({
   chatId,
   text,
+  parseMode,
 }: {
   chatId: string;
   text: string;
+  parseMode?: "HTML" | "MarkdownV2";
 }) {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
 
@@ -29,6 +31,7 @@ export async function sendTelegramMessage({
       body: JSON.stringify({
         chat_id: chatId,
         text,
+        ...(parseMode ? { parse_mode: parseMode } : {}),
       }),
     },
   );
