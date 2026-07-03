@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import type { AuthError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,6 +16,8 @@ export default function ResetPasswordPage() {
   const router = useRouter();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [canReset, setCanReset] = useState(false);
@@ -186,34 +188,66 @@ export default function ResetPasswordPage() {
             <span className="mb-2 block text-sm font-medium text-slate-300">
               Mật khẩu mới
             </span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => {
-                setPassword(event.target.value);
-                if (error) setError("");
-              }}
-              maxLength={passwordMaxLength}
-              placeholder="Tối thiểu 6 ký tự"
-              className="input-mystic"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(event) => {
+                  setPassword(event.target.value);
+                  if (error) setError("");
+                }}
+                maxLength={passwordMaxLength}
+                placeholder="Tối thiểu 6 ký tự"
+                className="input-mystic pr-12"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-white"
+                aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+              >
+                {showPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </label>
 
           <label className="block">
             <span className="mb-2 block text-sm font-medium text-slate-300">
               Xác nhận mật khẩu mới
             </span>
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={(event) => {
-                setConfirmPassword(event.target.value);
-                if (error) setError("");
-              }}
-              maxLength={passwordMaxLength}
-              placeholder="Nhập lại mật khẩu mới"
-              className="input-mystic"
-            />
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(event) => {
+                  setConfirmPassword(event.target.value);
+                  if (error) setError("");
+                }}
+                maxLength={passwordMaxLength}
+                placeholder="Nhập lại mật khẩu mới"
+                className="input-mystic pr-12"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setShowConfirmPassword((current) => !current)
+                }
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-white"
+                aria-label={
+                  showConfirmPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"
+                }
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-4 w-4" />
+                ) : (
+                  <Eye className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </label>
 
           <button

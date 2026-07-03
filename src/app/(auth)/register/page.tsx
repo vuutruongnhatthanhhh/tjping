@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Mail, UserPlus } from "lucide-react";
+import { Eye, EyeOff, Mail, UserPlus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 type Step = "form" | "sent";
@@ -22,6 +22,7 @@ export default function RegisterPage() {
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -92,9 +93,7 @@ export default function RegisterPage() {
           <Mail className="h-8 w-8" />
         </div>
         <h1 className="text-2xl font-bold text-white">Kiểm tra hộp thư</h1>
-        <p className="mt-3 text-sm leading-6 text-slate-400">
-          {message}
-        </p>
+        <p className="mt-3 text-sm leading-6 text-slate-400">{message}</p>
         <p className="mt-2 text-sm font-semibold text-sky-300">{email}</p>
         <Link href="/login" className="btn-primary mt-6 inline-flex">
           Quay lại đăng nhập
@@ -146,19 +145,34 @@ export default function RegisterPage() {
             placeholder="you@example.com"
           />
         </label>
+
         <label className="block">
           <span className="mb-2 block text-sm font-medium text-slate-300">
             Mật khẩu
           </span>
-          <input
-            type="password"
-            required
-            minLength={6}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="input-mystic"
-            placeholder="Ít nhất 6 ký tự"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={6}
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="input-mystic pr-12"
+              placeholder="Ít nhất 6 ký tự"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((current) => !current)}
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-white"
+              aria-label={showPassword ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
+            >
+              {showPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
         </label>
 
         <button
