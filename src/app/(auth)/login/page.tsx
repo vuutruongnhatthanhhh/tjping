@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LogIn } from "lucide-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -19,7 +19,6 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -27,6 +26,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+
     if (searchParams.get("fromRecovery") !== "1") {
       return;
     }
@@ -38,7 +39,7 @@ export default function LoginPage() {
       router.replace("/login");
       router.refresh();
     })();
-  }, [router, searchParams]);
+  }, [router]);
 
   const loginWithPassword = async (event: React.FormEvent) => {
     event.preventDefault();
