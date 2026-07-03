@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Eye, EyeOff, LogIn } from "lucide-react";
+import type { AuthError } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -54,7 +55,7 @@ export default function LoginPage() {
     });
 
     if (authError) {
-      setError("Email hoặc mật khẩu không đúng. Vui lòng thử lại.");
+      setError(getLoginErrorMessage(authError));
       setLoading(false);
       return;
     }
@@ -182,4 +183,20 @@ export default function LoginPage() {
       </p>
     </div>
   );
+}
+
+function getLoginErrorMessage(error: AuthError) {
+  const message = error.message.toLowerCase();
+
+  if (
+    message.includes("email not confirmed") ||
+    message.includes("email not verified") ||
+    message.includes("email_not_confirmed") ||
+    message.includes("signup disabled") ||
+    message.includes("confirmation")
+  ) {
+    return "Tài khoản này chưa xác thực email. Vui lòng kiểm tra hộp thư và bấm liên kết xác thực trước khi đăng nhập.";
+  }
+
+  return "Email hoặc mật khẩu không đúng. Vui lòng thử lại.";
 }
