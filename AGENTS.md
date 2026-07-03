@@ -1,0 +1,22 @@
+- Dự án sẽ làm về reminder automation đa kênh thương hiệu TJPing
+- Dự án sẽ dùng NextJS fullstack và Tailwind css
+- Dùng supabase cho database và storage và auth
+- Màu chủ đạo sẽ là xanh dương
+- Khi thao tác với sql phải làm file .sql trong thư mục migrations với số thứ tự tăng dần dạng xxxx\_[mô tả tiếng anh]
+- Ngôn ngữ dùng tiếng việt
+- Tên biến, tên hàm, tên trang dùng tiếng anh
+- Nếu có lệnh commit code thì không được đính kèm claude hay codex làm Co-Authored-By
+- Khi có lệnh commit hoặc push thì chỉ làm cho lần đó không tự ý làm cho lần sau
+- commit với tiếng anh hoàn toàn
+- commit phải dùng title với conventional commit
+- khi các file .sql mà cần sửa khi không sửa đè file cũ mà tạo ra một bản mới để fix
+- ngày trong các input và label phải hiển thị dạng dd/mm/yyyy
+- input chọn ngày mà hiện lịch, phải hiển thị lịch trên cả android, ios (safari, google chrome)
+- tiền phải hiển thị dạng tiền việt nam, tự ngăn cách bởi dấu chấm khi nhập vào các input giá tiền
+- Các chức năng: Tạo lời nhắc: tiêu đề, nội dung, thời gian.
+- Chọn kênh: Email, Telegram.
+- Lặp lại: một lần, hằng ngày, hằng tuần, hằng tháng.
+- Trạng thái: pending, sent, failed, canceled.
+- Nhắc nhiều bước: trước 1 ngày, trước 1 giờ, đúng giờ.
+- Log gửi thông báo để người dùng biết đã gửi chưa.
+- Telegram bot riêng: người dùng chat với bot để tạo nhắc nhở nhanh.
