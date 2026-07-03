@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { LogIn } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
 function GoogleIcon() {
@@ -19,11 +19,26 @@ function GoogleIcon() {
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (searchParams.get("fromRecovery") !== "1") {
+      return;
+    }
+
+    const supabase = createClient();
+
+    void (async () => {
+      await supabase.auth.signOut();
+      router.replace("/login");
+      router.refresh();
+    })();
+  }, [router, searchParams]);
 
   const loginWithPassword = async (event: React.FormEvent) => {
     event.preventDefault();

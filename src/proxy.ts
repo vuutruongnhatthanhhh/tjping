@@ -46,6 +46,9 @@ export async function proxy(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const isResetPasswordPage = pathname.startsWith("/reset-password");
+  const isLoginFromRecovery =
+    pathname.startsWith("/login") &&
+    request.nextUrl.searchParams.get("fromRecovery") === "1";
   const isLoginFromResetPassword =
     pathname.startsWith("/login") &&
     refererPathname.startsWith("/reset-password");
@@ -75,6 +78,7 @@ export async function proxy(request: NextRequest) {
     user &&
     isAuthPage &&
     !isResetPasswordPage &&
+    !isLoginFromRecovery &&
     !isLoginFromResetPassword
   ) {
     const url = request.nextUrl.clone();

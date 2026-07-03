@@ -9,6 +9,7 @@ import { createClient } from "@/lib/supabase/client";
 const passwordMaxLength = 128;
 const invalidRecoveryMessage =
   "Liên kết đặt lại mật khẩu không hợp lệ hoặc đã hết hạn.";
+const loginAfterRecoveryHref = "/login?fromRecovery=1";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -129,9 +130,12 @@ export default function ResetPasswordPage() {
 
     await supabase.auth.signOut();
     setLoading(false);
-    setSuccess("Đổi mật khẩu thành công. Hệ thống sẽ chuyển về trang đăng nhập.");
+    setSuccess(
+      "Đổi mật khẩu thành công. Hệ thống sẽ chuyển về trang đăng nhập.",
+    );
+
     window.setTimeout(() => {
-      router.push("/login");
+      router.push(loginAfterRecoveryHref);
       router.refresh();
     }, 1600);
   };
@@ -156,7 +160,7 @@ export default function ResetPasswordPage() {
         <div className="space-y-4 text-center">
           <p className="text-sm text-white">{error || invalidRecoveryMessage}</p>
           <Link
-            href="/login"
+            href={loginAfterRecoveryHref}
             className="inline-flex items-center gap-2 text-sm font-medium text-sky-300 hover:underline"
           >
             <ArrowLeft className="h-4 w-4" />
