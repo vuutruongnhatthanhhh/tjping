@@ -884,15 +884,13 @@ export default function RemindersClient({
 }
 
 function reminderToForm(reminder: ReminderItem): ReminderFormState {
-  const date = new Date(reminder.remindAt);
+  const parts = getBangkokDateTimeParts(reminder.remindAt);
 
   return {
     title: reminder.title,
     content: reminder.content,
-    date: toIsoDate(date),
-    time: `${String(date.getHours()).padStart(2, "0")}:${String(
-      date.getMinutes(),
-    ).padStart(2, "0")}`,
+    date: `${parts.year}-${parts.month}-${parts.day}`,
+    time: `${parts.hour}:${parts.minute}`,
     repeatType: reminder.repeatType,
     channels: reminder.channels.map(toChannelValue),
     stepTypes: reminder.stepTypes,
@@ -918,7 +916,33 @@ function formatTime(value: string) {
   return new Intl.DateTimeFormat("vi-VN", {
     hour: "2-digit",
     minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Bangkok",
   }).format(new Date(value));
+}
+
+function getBangkokDateTimeParts(value: string) {
+  const formatter = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  });
+
+  const parts = formatter.formatToParts(new Date(value));
+  const getPart = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((part) => part.type === type)?.value || "";
+
+  return {
+    year: getPart("year"),
+    month: getPart("month"),
+    day: getPart("day"),
+    hour: getPart("hour"),
+    minute: getPart("minute"),
+  };
 }
 
 function mapRepeatType(value: string) {
