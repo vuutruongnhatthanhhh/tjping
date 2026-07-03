@@ -60,13 +60,8 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/register") ||
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/api/auth/");
-  const isProtectedRoute =
-    pathname === "/" ||
-    pathname.startsWith("/channels") ||
-    pathname.startsWith("/reminders") ||
-    pathname.startsWith("/api/reminders") ||
-    pathname.startsWith("/api/channels") ||
-    pathname.startsWith("/logout");
+  const isCronRoute = pathname.startsWith("/api/cron/");
+  const isProtectedRoute = !isAuthPage && !isCronRoute;
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();

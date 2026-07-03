@@ -4,15 +4,11 @@ import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import {
-  BarChart3,
-  Bot,
   ChevronRight,
   Clock3,
-  History,
   LayoutDashboard,
   LogOut,
   Send,
-  Settings,
   X,
 } from "lucide-react";
 import Logo from "@/components/brand/Logo";
@@ -27,13 +23,21 @@ interface SidebarProps {
 }
 
 const navItems = [
-  { href: "/", label: "Tổng quan", icon: <LayoutDashboard className="h-5 w-5" /> },
-  { href: "/reminders", label: "Lời nhắc", icon: <Clock3 className="h-5 w-5" /> },
-  { href: "/channels", label: "Kênh gửi", icon: <Send className="h-5 w-5" /> },
-  { href: "/telegram-bot", label: "Telegram bot", icon: <Bot className="h-5 w-5" /> },
-  { href: "/delivery-logs", label: "Log gửi", icon: <History className="h-5 w-5" /> },
-  { href: "/reports", label: "Báo cáo", icon: <BarChart3 className="h-5 w-5" /> },
-  { href: "/settings", label: "Cài đặt", icon: <Settings className="h-5 w-5" /> },
+  {
+    href: "/",
+    label: "Tổng quan",
+    icon: <LayoutDashboard className="h-5 w-5" />,
+  },
+  {
+    href: "/reminders",
+    label: "Lời nhắc",
+    icon: <Clock3 className="h-5 w-5" />,
+  },
+  {
+    href: "/channels",
+    label: "Kênh gửi",
+    icon: <Send className="h-5 w-5" />,
+  },
 ];
 
 export default function Sidebar({
@@ -150,7 +154,7 @@ function SidebarContent({
         </button>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4 custom-scrollbar">
+      <nav className="custom-scrollbar flex-1 space-y-1 overflow-y-auto px-3 py-4">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||
@@ -220,7 +224,7 @@ function SidebarNavCollapsed({
 }) {
   return (
     <>
-      <nav className="flex-1 space-y-1 overflow-x-hidden overflow-y-auto px-2 py-4 custom-scrollbar">
+      <nav className="custom-scrollbar flex-1 space-y-1 overflow-x-hidden overflow-y-auto px-2 py-4">
         {navItems.map((item) => {
           const isActive =
             pathname === item.href ||

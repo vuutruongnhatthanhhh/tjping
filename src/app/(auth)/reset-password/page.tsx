@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
+import type { AuthError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 
 const passwordMaxLength = 128;
@@ -124,7 +125,7 @@ export default function ResetPasswordPage() {
 
     if (updateError) {
       setLoading(false);
-      setError("Không thể cập nhật mật khẩu. Vui lòng thử lại.");
+      setError(getResetPasswordErrorMessage(updateError));
       return;
     }
 
@@ -226,4 +227,23 @@ export default function ResetPasswordPage() {
       )}
     </div>
   );
+}
+
+function getResetPasswordErrorMessage(error: AuthError) {
+  const message = error.message.toLowerCase();
+
+  if (
+    message.includes("same password") ||
+    message.includes("same as the old password") ||
+    message.includes("different from the old password") ||
+    message.includes("new password should be different")
+  ) {
+    return "Mật khẩu mới không được trùng với mật khẩu cũ.";
+  }
+
+  if (message.includes("password")) {
+    return "Mật khẩu mới chưa hợp lệ. Vui lòng kiểm tra lại.";
+  }
+
+  return "Không thể cập nhật mật khẩu. Vui lòng thử lại.";
 }
