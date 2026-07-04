@@ -46,7 +46,9 @@ export function parseTelegramCommand(text: string) {
   };
 }
 
-export function parseReminderCommand(rawArgs: string): ReminderCommandPayload | null {
+export function parseReminderCommand(
+  rawArgs: string,
+): ReminderCommandPayload | null {
   const match = rawArgs.match(
     /^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2})\s+(.+)$/u,
   );
@@ -90,7 +92,11 @@ export function formatTelegramDateTime(dateValue: string | Date) {
   )}:${padTwoDigits(bangkokDate.getUTCMinutes())}`;
 }
 
-function buildReminderSteps(reminderId: string, userId: string, remindAt: Date) {
+function buildReminderSteps(
+  reminderId: string,
+  userId: string,
+  remindAt: Date,
+) {
   return [
     {
       reminder_id: reminderId,
@@ -126,14 +132,21 @@ export async function linkTelegramAccount({
   }
 
   if (!settings) {
-    return { success: false as const, message: "Token liên kết không hợp lệ hoặc đã hết hạn." };
+    return {
+      success: false as const,
+      message: "Token liên kết không hợp lệ hoặc đã hết hạn.",
+    };
   }
 
   if (
     settings.telegram_link_token_expires_at &&
     new Date(settings.telegram_link_token_expires_at).getTime() < Date.now()
   ) {
-    return { success: false as const, message: "Token liên kết đã hết hạn. Vui lòng tạo token mới trong TJPing." };
+    return {
+      success: false as const,
+      message:
+        "Token liên kết đã hết hạn. Vui lòng tạo token mới trong TJPing.",
+    };
   }
 
   const { error: updateError } = await supabase
@@ -152,7 +165,11 @@ export async function linkTelegramAccount({
     throw new Error("Không thể lưu kết nối Telegram cho tài khoản.");
   }
 
-  return { success: true as const, message: "Đã liên kết Telegram với tài khoản TJPing. Bây giờ bạn có thể dùng /remind, /list và /delete." };
+  return {
+    success: true as const,
+    message:
+      "Đã liên kết Telegram với tài khoản TJPing. Bây giờ bạn có thể dùng /remind, /list và /delete.",
+  };
 }
 
 export async function createTelegramReminder({
@@ -258,7 +275,10 @@ export async function listTelegramReminders(chatId: string) {
   }
 
   if (!reminders || reminders.length === 0) {
-    return { success: true as const, message: "Hiện chưa có lời nhắc pending hoặc failed nào." };
+    return {
+      success: true as const,
+      message: "Hiện chưa có lời nhắc pending hoặc failed nào.",
+    };
   }
 
   return {
@@ -351,7 +371,7 @@ export async function deleteTelegramReminder({
 
   return {
     success: true as const,
-    message: `?? x?a l?i nh?c [${reminder.id.slice(0, 8)}] ${reminder.title}.`,
+    message: `Đã xóa lời nhắc [${reminder.id.slice(0, 8)}] ${reminder.title}.`,
   };
 }
 
