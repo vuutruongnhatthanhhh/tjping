@@ -61,7 +61,9 @@ export async function proxy(request: NextRequest) {
     pathname.startsWith("/verify-email") ||
     pathname.startsWith("/api/auth/");
   const isCronRoute = pathname.startsWith("/api/cron/");
-  const isProtectedRoute = !isAuthPage && !isCronRoute;
+  const isTelegramWebhookRoute = pathname.startsWith("/api/telegram/webhook");
+  const isProtectedRoute =
+    !isAuthPage && !isCronRoute && !isTelegramWebhookRoute;
 
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
