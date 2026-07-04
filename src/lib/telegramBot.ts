@@ -292,41 +292,52 @@ export async function deleteTelegramReminder({
     .maybeSingle<{ user_id: string }>();
 
   if (settingsError) {
-    throw new Error("Không thể kiểm tra kết nối Telegram.");
+    throw new Error("Kh?ng th? ki?m tra k?t n?i Telegram.");
   }
 
   if (!settings) {
     return {
       success: false as const,
       message:
-        "Chat Telegram này chưa được liên kết. Vào trang Kênh gửi trong TJPing để kết nối bot trước.",
+        "Chat Telegram n?y ch?a ???c li?n k?t. V?o trang K?nh g?i trong TJPing ?? k?t n?i bot tr??c.",
     };
   }
+
+  const normalizedReminderCode = reminderCode.trim().toLowerCase();
 
   const { data: reminders, error: remindersError } = await supabase
     .from("reminders")
     .select("id,title")
     .eq("user_id", settings.user_id)
-    .ilike("id", `${reminderCode}%`)
-    .limit(2)
+    .order("created_at", { ascending: false })
+    .limit(50)
     .returns<Array<{ id: string; title: string }>>();
 
   if (remindersError) {
-    throw new Error("Không thể tìm reminder cần xóa.");
+    throw new Error("Kh?ng th? t?m reminder c?n x?a.");
   }
 
-  if (!reminders || reminders.length === 0) {
-    return { success: false as const, message: "Không tìm thấy reminder với mã đã nhập." };
-  }
+  const matchedReminders =
+    reminders?.filter((item) =>
+      item.id.toLowerCase().startsWith(normalizedReminderCode),
+    ) || [];
 
-  if (reminders.length > 1) {
+  if (matchedReminders.length === 0) {
     return {
       success: false as const,
-      message: "Mã reminder đang bị trùng. Vui lòng dùng nhiều ký tự hơn trong mã ID.",
+      message: "Kh?ng t?m th?y reminder v?i m? ?? nh?p.",
     };
   }
 
-  const reminder = reminders[0];
+  if (matchedReminders.length > 1) {
+    return {
+      success: false as const,
+      message:
+        "M? reminder ?ang b? tr?ng. Vui l?ng d?ng nhi?u k? t? h?n trong m? ID.",
+    };
+  }
+
+  const reminder = matchedReminders[0];
 
   const { error: deleteError } = await supabase
     .from("reminders")
@@ -335,12 +346,12 @@ export async function deleteTelegramReminder({
     .eq("user_id", settings.user_id);
 
   if (deleteError) {
-    throw new Error("Không thể xóa reminder từ Telegram.");
+    throw new Error("Kh?ng th? x?a reminder t? Telegram.");
   }
 
   return {
     success: true as const,
-    message: `Đã xóa lời nhắc [${reminder.id.slice(0, 8)}] ${reminder.title}.`,
+    message: `?? x?a l?i nh?c [${reminder.id.slice(0, 8)}] ${reminder.title}.`,
   };
 }
 
