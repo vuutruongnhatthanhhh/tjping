@@ -1,11 +1,5 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 
-export interface TelegramCommandContext {
-  chatId: string;
-  username: string;
-  text: string;
-}
-
 interface ReminderCommandPayload {
   title: string;
   remindAt: Date;
@@ -144,8 +138,7 @@ export async function linkTelegramAccount({
   ) {
     return {
       success: false as const,
-      message:
-        "Token liên kết đã hết hạn. Vui lòng tạo token mới trong TJPing.",
+      message: "Token liên kết đã hết hạn. Vui lòng tạo token mới trong TJPing.",
     };
   }
 
@@ -312,14 +305,14 @@ export async function deleteTelegramReminder({
     .maybeSingle<{ user_id: string }>();
 
   if (settingsError) {
-    throw new Error("Kh?ng th? ki?m tra k?t n?i Telegram.");
+    throw new Error("Không thể kiểm tra kết nối Telegram.");
   }
 
   if (!settings) {
     return {
       success: false as const,
       message:
-        "Chat Telegram n?y ch?a ???c li?n k?t. V?o trang K?nh g?i trong TJPing ?? k?t n?i bot tr??c.",
+        "Chat Telegram này chưa được liên kết. Vào trang Kênh gửi trong TJPing để kết nối bot trước.",
     };
   }
 
@@ -334,7 +327,7 @@ export async function deleteTelegramReminder({
     .returns<Array<{ id: string; title: string }>>();
 
   if (remindersError) {
-    throw new Error("Kh?ng th? t?m reminder c?n x?a.");
+    throw new Error("Không thể tìm reminder cần xóa.");
   }
 
   const matchedReminders =
@@ -345,7 +338,7 @@ export async function deleteTelegramReminder({
   if (matchedReminders.length === 0) {
     return {
       success: false as const,
-      message: "Kh?ng t?m th?y reminder v?i m? ?? nh?p.",
+      message: "Không tìm thấy reminder với mã đã nhập.",
     };
   }
 
@@ -353,7 +346,7 @@ export async function deleteTelegramReminder({
     return {
       success: false as const,
       message:
-        "M? reminder ?ang b? tr?ng. Vui l?ng d?ng nhi?u k? t? h?n trong m? ID.",
+        "Mã reminder đang bị trùng. Vui lòng dùng nhiều ký tự hơn trong mã ID.",
     };
   }
 
@@ -366,7 +359,7 @@ export async function deleteTelegramReminder({
     .eq("user_id", settings.user_id);
 
   if (deleteError) {
-    throw new Error("Kh?ng th? x?a reminder t? Telegram.");
+    throw new Error("Không thể xóa reminder từ Telegram.");
   }
 
   return {
