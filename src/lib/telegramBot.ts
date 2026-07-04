@@ -48,14 +48,14 @@ export function parseTelegramCommand(text: string) {
 
 export function parseReminderCommand(rawArgs: string): ReminderCommandPayload | null {
   const match = rawArgs.match(
-    /^(?<date>\d{2}\/\d{2}\/\d{4})\s+(?<time>\d{2}:\d{2})\s+(?<title>.+)$/u,
+    /^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2})\s+(.+)$/u,
   );
 
-  if (!match?.groups) {
+  if (!match) {
     return null;
   }
 
-  const { date, time, title } = match.groups;
+  const [, date, time, title] = match;
   const remindAt = parseVietnameseDateTime(date, time);
 
   if (!remindAt || !title.trim()) {
