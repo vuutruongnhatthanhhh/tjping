@@ -27,6 +27,7 @@ interface ChannelsClientProps {
   fallbackEmail: string;
   userEmail?: string;
   botUsername: string;
+  telegramConnected?: boolean;
   isDemo?: boolean;
 }
 
@@ -35,6 +36,7 @@ export default function ChannelsClient({
   fallbackEmail,
   userEmail,
   botUsername,
+  telegramConnected = false,
   isDemo = false,
 }: ChannelsClientProps) {
   const { showToast } = useToast();
@@ -55,6 +57,9 @@ export default function ChannelsClient({
     settings?.telegramUsername || "",
   );
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingTelegramLink, setIsGeneratingTelegramLink] = useState(false);
+  const [telegramStartCommand, setTelegramStartCommand] = useState("");
+  const [telegramLinkExpiresAt, setTelegramLinkExpiresAt] = useState("");
 
   const activeChannels = Number(emailEnabled) + Number(telegramEnabled);
   const botHandle = botUsername.startsWith("@")
@@ -114,6 +119,41 @@ export default function ChannelsClient({
       "_blank",
       "noopener,noreferrer",
     );
+  };
+
+  const connectTelegramBot = async () => {
+    if (isDemo) {
+      showToast("Cần cấu hình Supabase để liên kết bot thật.", "error");
+      return;
+    }
+
+    setIsGeneratingTelegramLink(true);
+
+    try {
+      const response = await fetch("/api/channels/telegram-link", {
+        method: "POST",
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        botUrl?: string;
+        command?: string;
+        expiresAt?: string;
+      };
+
+      if (!response.ok || !result.botUrl || !result.command || !result.expiresAt) {
+        showToast(result.error || "Không thể tạo mã liên kết Telegram.", "error");
+        return;
+      }
+
+      setTelegramStartCommand(result.command);
+      setTelegramLinkExpiresAt(result.expiresAt);
+      window.open(result.botUrl, "_blank", "noopener,noreferrer");
+      showToast("Đã tạo mã liên kết. Mở bot và gửi lệnh /start để hoàn tất.", "success");
+    } catch {
+      showToast("Không thể tạo liên kết Telegram lúc này.", "error");
+    } finally {
+      setIsGeneratingTelegramLink(false);
+    }
   };
 
   return (
@@ -264,6 +304,12 @@ export default function ChannelsClient({
                           Đây là bot dùng chung của hệ thống, người dùng không
                           cần sửa.
                         </p>
+                        <p className="mt-3 text-sm text-slate-300">
+                          Trạng thái liên kết:
+                          <span className="ml-2 font-semibold text-white">
+                            {telegramConnected ? "Đã kết nối" : "Chưa kết nối"}
+                          </span>
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -274,9 +320,39 @@ export default function ChannelsClient({
                           <ExternalLink className="h-4 w-4" />
                           Mở bot
                         </button>
+                        <button
+                          type="button"
+                          onClick={connectTelegramBot}
+                          disabled={isGeneratingTelegramLink}
+                          className="inline-flex items-center gap-2 rounded-xl border border-sky-300/20 bg-sky-500/10 px-3 py-2 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {isGeneratingTelegramLink ? <ButtonSpinner /> : null}
+                          Kết nối nhanh
+                        </button>
                       </div>
                     </div>
                   </div>
+
+                  {telegramStartCommand ? (
+                    <div className="rounded-2xl border border-sky-400/12 bg-sky-500/8 p-4 text-sm text-slate-200">
+                      <p className="font-semibold text-white">
+                        Bước liên kết nhanh
+                      </p>
+                      <p className="mt-2 leading-6 text-slate-300">
+                        1. Bấm <span className="font-semibold text-white">Mở bot</span> hoặc
+                        <span className="font-semibold text-white"> Kết nối nhanh</span>.
+                      </p>
+                      <p className="leading-6 text-slate-300">
+                        2. Nếu bot chưa tự điền lệnh, gửi đúng dòng sau trong Telegram:
+                      </p>
+                      <div className="mt-3 rounded-xl border border-sky-400/12 bg-[rgba(7,18,34,0.7)] px-4 py-3 font-mono text-sm text-sky-100">
+                        {telegramStartCommand}
+                      </div>
+                      <p className="mt-3 text-xs text-slate-400">
+                        Mã liên kết hết hạn lúc {formatDateTimeLabel(telegramLinkExpiresAt)}.
+                      </p>
+                    </div>
+                  ) : null}
 
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <label className="block">
@@ -384,4 +460,20 @@ function ToggleRow({
       </span>
     </button>
   );
+}
+
+function formatDateTimeLabel(value: string) {
+  if (!value) {
+    return "--";
+  }
+
+  return new Intl.DateTimeFormat("vi-VN", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+    timeZone: "Asia/Bangkok",
+  }).format(new Date(value));
 }

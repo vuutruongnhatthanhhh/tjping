@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { getTelegramBotUsername } from "@/lib/telegramBot";
 import ChannelsClient, { type ChannelSettings } from "./ChannelsClient";
 
 export const dynamic = "force-dynamic";
 
-const TELEGRAM_BOT_USERNAME = "TJPingBot";
+const TELEGRAM_BOT_USERNAME = getTelegramBotUsername();
 
 interface ChannelSettingsRow {
   email_enabled: boolean;
@@ -13,6 +14,7 @@ interface ChannelSettingsRow {
   telegram_enabled: boolean;
   telegram_chat_id: string;
   telegram_username: string;
+  telegram_connected_at?: string | null;
 }
 
 export default async function ChannelsPage() {
@@ -40,7 +42,7 @@ export default async function ChannelsPage() {
   const { data } = await supabase
     .from("notification_channel_settings")
     .select(
-      "email_enabled,email_address,telegram_enabled,telegram_chat_id,telegram_username",
+      "email_enabled,email_address,telegram_enabled,telegram_chat_id,telegram_username,telegram_connected_at",
     )
     .eq("user_id", user.id)
     .maybeSingle<ChannelSettingsRow>();
@@ -61,6 +63,7 @@ export default async function ChannelsPage() {
       fallbackEmail={user.email || ""}
       userEmail={user.email || ""}
       botUsername={TELEGRAM_BOT_USERNAME}
+      telegramConnected={Boolean(data?.telegram_connected_at || data?.telegram_chat_id)}
     />
   );
 }

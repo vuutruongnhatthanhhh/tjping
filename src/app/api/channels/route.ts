@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { isSupabaseConfigured } from "@/lib/env";
 import { createClient } from "@/lib/supabase/server";
+import { getTelegramBotUsername } from "@/lib/telegramBot";
 
-const TELEGRAM_BOT_USERNAME = "TJPingBot";
+const TELEGRAM_BOT_USERNAME = getTelegramBotUsername();
 
 export async function PUT(request: Request) {
   if (!isSupabaseConfigured()) {
