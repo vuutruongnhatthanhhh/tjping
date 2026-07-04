@@ -7,7 +7,6 @@ import {
   Mail,
   MessageCircle,
   Save,
-  Send,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Sidebar from "@/components/layout/Sidebar";
@@ -61,6 +60,7 @@ export default function ChannelsClient({
   const botHandle = botUsername.startsWith("@")
     ? botUsername
     : `@${botUsername}`;
+  const guideUrl = "";
 
   const saveSettings = async () => {
     if (isDemo) {
@@ -313,39 +313,20 @@ export default function ChannelsClient({
 
             <div className="space-y-4">
               <div className="glass-card rounded-2xl p-5">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-base font-semibold text-white">
-                    Hướng dẫn nhanh
-                  </h3>
-                  <Send className="h-5 w-5 text-sky-300" />
-                </div>
-
-                <div className="space-y-3 text-sm leading-6 text-slate-300">
-                  <div className="rounded-xl border border-sky-400/10 bg-white/[0.03] px-4 py-3">
-                    <p className="font-semibold text-white">Email</p>
-                    <p className="mt-1">
-                      Nhập email anh muốn nhận reminder. Có thể dùng email tài
-                      khoản hiện tại hoặc một email nhận riêng.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-sky-400/10 bg-white/[0.03] px-4 py-3">
-                    <p className="font-semibold text-white">Telegram</p>
-                    <p className="mt-1">
-                      Bấm mở bot, nhắn <code>/start</code>, sau đó lấy{" "}
-                      <code>chat ID</code> hoặc nhập username Telegram của user
-                      để hệ thống lưu lại kết nối.
-                    </p>
-                  </div>
-
-                  <div className="rounded-xl border border-sky-400/10 bg-white/[0.03] px-4 py-3">
-                    <p className="font-semibold text-white">Khuyến nghị</p>
-                    <p className="mt-1">
-                      Nên bật cả Email và Telegram để có kênh dự phòng khi một
-                      bên gửi lỗi.
-                    </p>
-                  </div>
-                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    window.open(
+                      guideUrl || "about:blank",
+                      "_blank",
+                      "noopener,noreferrer",
+                    )
+                  }
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-sky-400/12 bg-white/[0.03] px-4 py-3 text-sm font-semibold text-sky-100 transition-colors hover:bg-sky-500/10"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Hướng dẫn nhanh
+                </button>
               </div>
             </div>
           </section>

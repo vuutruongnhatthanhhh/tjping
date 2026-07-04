@@ -29,6 +29,7 @@ export interface DashboardReminder {
   content: string;
   remindAt: string;
   repeatType: string;
+  weeklyDays: number[];
   status: string;
   channels: string[];
 }
@@ -38,6 +39,7 @@ interface DashboardClientProps {
   userName?: string;
   reminders: DashboardReminder[];
   isDemo?: boolean;
+  telegramConfigured?: boolean;
 }
 
 interface DemoReminder {
@@ -108,17 +110,19 @@ export default function DashboardClient({
   userName,
   reminders,
   isDemo = false,
+  telegramConfigured = true,
 }: DashboardClientProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formMessage, setFormMessage] = useState("");
   const [formError, setFormError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const today = formatDate(new Date(2026, 6, 1));
-  const displayReminders = reminders.length > 0 ? reminders : upcomingReminders;
-  const pendingCount = reminders.filter((item) => item.status === "pending").length;
-  const sentCount = reminders.filter((item) => item.status === "sent").length;
-  const failedCount = reminders.filter((item) => item.status === "failed").length;
+  const [reminderItems, setReminderItems] = useState(reminders);
+  const displayReminders = reminderItems.length > 0 ? reminderItems : upcomingReminders;
+  const pendingCount = reminderItems.filter((item) => item.status === "pending").length;
+  const sentCount = reminderItems.filter((item) => item.status === "sent").length;
+  const failedCount = reminderItems.filter((item) => item.status === "failed").length;
+  const today = formatDate(new Date());
 
   useEffect(() => {
     if (isDemo) {
@@ -150,17 +154,23 @@ export default function DashboardClient({
     };
   }, [isDemo]);
 
+  useEffect(() => {
+    setReminderItems(reminders);
+  }, [reminders]);
+
   const createReminder = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setFormMessage("");
     setFormError("");
     setIsSaving(true);
 
+    const formData = new FormData(event.currentTarget);
+
     const response = await fetch("/api/reminders", {
       method: "POST",
-      body: new FormData(event.currentTarget),
+      body: formData,
     });
-    const result = (await response.json()) as { error?: string };
+    const result = (await response.json()) as { error?: string; id?: string };
 
     if (!response.ok) {
       setFormError(result.error || "Không thể tạo lời nhắc.");
@@ -168,8 +178,15 @@ export default function DashboardClient({
       return;
     }
 
+    setReminderItems((current) =>
+      sortDashboardReminders([
+        buildDashboardReminder(formData, result.id || crypto.randomUUID()),
+        ...current,
+      ]),
+    );
     setFormMessage("Đã tạo lời nhắc và lưu theo tài khoản hiện tại.");
     setIsSaving(false);
+    event.currentTarget.reset();
     router.refresh();
   };
 
@@ -305,7 +322,7 @@ export default function DashboardClient({
 
                 <label className="block">
                   <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-                    Ngày nhắc
+                    Ngày bắt đầu
                   </span>
                   <input
                     name="date"
@@ -349,7 +366,9 @@ export default function DashboardClient({
 
               <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <input type="hidden" name="channels" value="email" />
-                <input type="hidden" name="channels" value="telegram" />
+                {telegramConfigured && (
+                  <input type="hidden" name="channels" value="telegram" />
+                )}
                 <ChannelToggle
                   icon={<Mail className="h-5 w-5" />}
                   title="Email"
@@ -359,8 +378,22 @@ export default function DashboardClient({
                 <ChannelToggle
                   icon={<MessageCircle className="h-5 w-5" />}
                   title="Telegram"
-                  description="Gửi qua bot riêng của TJPing"
-                  active
+                  description={
+                    telegramConfigured
+                      ? "Gửi qua bot riêng của TJPing"
+                      : "Chưa cấu hình Telegram"
+                  }
+                  active={telegramConfigured}
+                  disabled={!telegramConfigured}
+                  helperAction={
+                    !telegramConfigured
+                      ? {
+                          label: "?",
+                          href: "https://example.com/telegram-setup",
+                          title: "Xem hướng dẫn cấu hình Telegram",
+                        }
+                      : undefined
+                  }
                 />
               </div>
               <button
@@ -435,7 +468,9 @@ export default function DashboardClient({
                   const description =
                     isSavedReminder ? item.content : item.description;
                   const repeat =
-                    isSavedReminder ? mapRepeatType(item.repeatType) : item.repeat;
+                    isSavedReminder
+                      ? mapRepeatType(item.repeatType, item.weeklyDays)
+                      : item.repeat;
                   const channels = item.channels;
 
                   return (
@@ -517,7 +552,7 @@ function isDashboardReminder(
   return "remindAt" in item;
 }
 
-function mapRepeatType(value: string) {
+function mapRepeatType(value: string, weeklyDays: number[] = []) {
   const repeatMap: Record<string, string> = {
     once: "Một lần",
     daily: "Hằng ngày",
@@ -525,7 +560,30 @@ function mapRepeatType(value: string) {
     monthly: "Hằng tháng",
   };
 
+  repeatMap.custom_weekly = formatWeeklyDaysLabel(weeklyDays);
   return repeatMap[value] || value;
+}
+
+function formatWeeklyDaysLabel(weeklyDays: number[]) {
+  if (weeklyDays.length === 0) {
+    return "Theo các thứ trong tuần";
+  }
+
+  return weeklyDays.map(mapWeekdayLabel).join(", ");
+}
+
+function mapWeekdayLabel(day: number) {
+  const labels: Record<number, string> = {
+    1: "Thứ 2",
+    2: "Thứ 3",
+    3: "Thứ 4",
+    4: "Thứ 5",
+    5: "Thứ 6",
+    6: "Thứ 7",
+    7: "Chủ nhật",
+  };
+
+  return labels[day] || `Thứ ${day}`;
 }
 
 function ChannelToggle({
@@ -533,16 +591,25 @@ function ChannelToggle({
   title,
   description,
   active,
+  disabled,
+  helperAction,
 }: {
   icon: React.ReactNode;
   title: string;
   description: string;
   active?: boolean;
+  disabled?: boolean;
+  helperAction?: {
+    label: string;
+    href: string;
+    title: string;
+  };
 }) {
   return (
     <button
       type="button"
-      className="flex items-center gap-3 rounded-xl border p-4 text-left transition-all hover:bg-sky-500/10"
+      disabled={disabled}
+      className="flex items-center gap-3 rounded-xl border p-4 text-left transition-all hover:bg-sky-500/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
       style={{
         borderColor: active ? "rgba(96,165,250,0.28)" : "rgba(96,165,250,0.12)",
         background: active ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.03)",
@@ -552,7 +619,21 @@ function ChannelToggle({
         {icon}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-sm font-semibold text-white">{title}</span>
+        <span className="flex items-center gap-2 text-sm font-semibold text-white">
+          <span>{title}</span>
+          {helperAction ? (
+            <a
+              href={helperAction.href}
+              target="_blank"
+              rel="noreferrer"
+              title={helperAction.title}
+              onClick={(event) => event.stopPropagation()}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-sky-300/20 bg-sky-500/10 text-[11px] font-bold text-sky-200 transition-colors hover:bg-sky-500/20"
+            >
+              {helperAction.label}
+            </a>
+          ) : null}
+        </span>
         <span className="mt-1 block text-xs text-slate-400">{description}</span>
       </span>
       <span className="h-5 w-5 rounded-full border border-sky-300 bg-sky-400 shadow-[0_0_18px_rgba(56,189,248,0.45)]" />
@@ -588,4 +669,49 @@ function StatusBadge({ status }: { status: string }) {
       {config.label}
     </span>
   );
+}
+
+
+function buildDashboardReminder(formData: FormData, id: string): DashboardReminder {
+  return {
+    id,
+    title: String(formData.get("title") || ""),
+    content: String(formData.get("content") || ""),
+    remindAt: parseDashboardDateTime(
+      String(formData.get("date") || ""),
+      String(formData.get("time") || ""),
+    ),
+    repeatType: String(formData.get("repeatType") || "once"),
+    weeklyDays: formData.getAll("weeklyDays").map(Number).filter(Boolean),
+    status: "pending",
+    channels: formData.getAll("channels").map(mapDashboardChannel),
+  };
+}
+
+
+function sortDashboardReminders(items: DashboardReminder[]) {
+  return [...items].sort(
+    (left, right) =>
+      new Date(right.remindAt).getTime() - new Date(left.remindAt).getTime(),
+  );
+}
+
+function parseDashboardDateTime(date: string, time: string) {
+  const [day = "01", month = "01", year = "2026"] = date.split("/");
+  const [hour = "00", minute = "00"] = time.split(":");
+
+  return new Date(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+  ).toISOString();
+}
+
+function mapDashboardChannel(value: FormDataEntryValue) {
+  const channel = String(value).toLowerCase();
+  if (channel === "email") return "Email";
+  if (channel === "telegram") return "Telegram";
+  return String(value);
 }

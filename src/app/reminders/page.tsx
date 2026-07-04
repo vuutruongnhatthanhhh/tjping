@@ -11,6 +11,7 @@ interface ReminderRow {
   content: string;
   remind_at: string;
   repeat_type: string;
+  weekly_days: number[] | null;
   status: string;
   channels: string[];
 }
@@ -18,6 +19,12 @@ interface ReminderRow {
 interface ReminderStepRow {
   reminder_id: string;
   step_type: string;
+}
+
+interface ChannelSettingsRow {
+  telegram_enabled: boolean;
+  telegram_chat_id: string | null;
+  telegram_username: string | null;
 }
 
 export default async function RemindersPage() {
@@ -36,11 +43,17 @@ export default async function RemindersPage() {
 
   const { data: remindersData } = await supabase
     .from("reminders")
-    .select("id,title,content,remind_at,repeat_type,status,channels")
+    .select("id,title,content,remind_at,repeat_type,weekly_days,status,channels")
     .eq("user_id", user.id)
     .order("remind_at", { ascending: false })
     .limit(12)
     .returns<ReminderRow[]>();
+
+  const { data: channelSettings } = await supabase
+    .from("notification_channel_settings")
+    .select("telegram_enabled,telegram_chat_id,telegram_username")
+    .eq("user_id", user.id)
+    .maybeSingle<ChannelSettingsRow>();
 
   const reminderIds = (remindersData || []).map((item) => item.id);
 
@@ -70,6 +83,7 @@ export default async function RemindersPage() {
     content: item.content,
     remindAt: item.remind_at,
     repeatType: item.repeat_type,
+    weeklyDays: item.weekly_days || [],
     status: item.status,
     channels: item.channels.map(mapChannel),
     stepTypes: stepTypesByReminderId[item.id] || ["on_time"],
@@ -84,6 +98,13 @@ export default async function RemindersPage() {
           : undefined
       }
       reminders={reminders}
+      telegramConfigured={
+        Boolean(channelSettings?.telegram_enabled) &&
+        Boolean(
+          channelSettings?.telegram_chat_id?.trim() ||
+            channelSettings?.telegram_username?.trim(),
+        )
+      }
     />
   );
 }

@@ -28,7 +28,8 @@ interface ReminderRow {
   title: string;
   content: string;
   remind_at: string;
-  repeat_type: "once" | "daily" | "weekly" | "monthly";
+  repeat_type: "once" | "daily" | "weekly" | "monthly" | "custom_weekly";
+  weekly_days: number[] | null;
   status: string;
   channels: ReminderChannel[];
 }
@@ -92,7 +93,7 @@ async function runDelivery() {
     await Promise.all([
       supabase
         .from("reminders")
-        .select("id,user_id,title,content,remind_at,repeat_type,status,channels")
+        .select("id,user_id,title,content,remind_at,repeat_type,weekly_days,status,channels")
         .in("id", reminderIds)
         .returns<ReminderRow[]>(),
       supabase
@@ -124,6 +125,7 @@ async function runDelivery() {
         content: item.content,
         remindAt: item.remind_at,
         repeatType: item.repeat_type,
+        weeklyDays: item.weekly_days || [],
         status: item.status,
         channels: item.channels || [],
       },
@@ -294,6 +296,7 @@ async function processStep({
       step.scheduledAt,
       reminder.repeatType,
       now,
+      reminder.weeklyDays,
     );
 
     await supabase
@@ -309,6 +312,7 @@ async function processStep({
         reminder.remindAt,
         reminder.repeatType,
         now,
+        reminder.weeklyDays,
       );
 
       await supabase

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
@@ -29,6 +29,7 @@ export interface ReminderItem {
   content: string;
   remindAt: string;
   repeatType: string;
+  weeklyDays: number[];
   status: string;
   channels: string[];
   stepTypes: string[];
@@ -39,6 +40,7 @@ interface RemindersClientProps {
   userName?: string;
   reminders: ReminderItem[];
   isDemo?: boolean;
+  telegramConfigured?: boolean;
 }
 
 interface ReminderFormState {
@@ -47,6 +49,7 @@ interface ReminderFormState {
   date: string;
   time: string;
   repeatType: string;
+  weeklyDays: number[];
   channels: string[];
   stepTypes: string[];
 }
@@ -58,6 +61,7 @@ const demoReminders: ReminderItem[] = [
     content: "Nhắc trước 1 ngày, 1 giờ và đúng giờ qua Email và Telegram.",
     remindAt: "2026-07-04T09:00:00.000Z",
     repeatType: "weekly",
+    weeklyDays: [],
     status: "pending",
     channels: ["Email", "Telegram"],
     stepTypes: ["one_day_before", "one_hour_before", "on_time"],
@@ -68,6 +72,7 @@ const demoReminders: ReminderItem[] = [
     content: "Kiểm tra log gửi và xác nhận trạng thái từng kênh.",
     remindAt: "2026-07-03T14:30:00.000Z",
     repeatType: "once",
+    weeklyDays: [],
     status: "sent",
     channels: ["Email"],
     stepTypes: ["on_time"],
@@ -78,6 +83,7 @@ const demoReminders: ReminderItem[] = [
     content: "Telegram bot riêng hỗ trợ tạo nhắc nhanh từ chat.",
     remindAt: "2026-07-05T08:00:00.000Z",
     repeatType: "monthly",
+    weeklyDays: [],
     status: "failed",
     channels: ["Telegram"],
     stepTypes: ["one_hour_before", "on_time"],
@@ -102,13 +108,26 @@ const reminderStepOptions = [
   },
 ];
 
-const emptyForm = (): ReminderFormState => ({
+const weekdayOptions = [
+  { value: 1, label: "Thứ 2" },
+  { value: 2, label: "Thứ 3" },
+  { value: 3, label: "Thứ 4" },
+  { value: 4, label: "Thứ 5" },
+  { value: 5, label: "Thứ 6" },
+  { value: 6, label: "Thứ 7" },
+  { value: 7, label: "Chủ nhật" },
+];
+
+const TELEGRAM_SETUP_GUIDE_URL = "https://example.com/telegram-setup";
+
+const emptyForm = (telegramConfigured = true): ReminderFormState => ({
   title: "",
   content: "",
   date: getTodayIsoDate(),
   time: "09:00",
   repeatType: "once",
-  channels: ["email", "telegram"],
+  weeklyDays: [],
+  channels: telegramConfigured ? ["email", "telegram"] : ["email"],
   stepTypes: ["on_time"],
 });
 
@@ -124,6 +143,7 @@ export default function RemindersClient({
   userName,
   reminders,
   isDemo = false,
+  telegramConfigured = true,
 }: RemindersClientProps) {
   const router = useRouter();
   const { showToast } = useToast();
@@ -137,11 +157,16 @@ export default function RemindersClient({
     null,
   );
   const [formState, setFormState] = useState<ReminderFormState>(emptyForm);
+  const [reminderItems, setReminderItems] = useState(reminders);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  useEffect(() => {
+    setReminderItems(reminders);
+  }, [reminders]);
+
   const displayReminders =
-    isDemo && reminders.length === 0 ? demoReminders : reminders;
+    isDemo && reminderItems.length === 0 ? demoReminders : reminderItems;
   const pendingCount = displayReminders.filter(
     (item) => item.status === "pending",
   ).length;
@@ -166,7 +191,7 @@ export default function RemindersClient({
 
   const openCreateModal = () => {
     setEditingReminder(null);
-    setFormState(emptyForm());
+    setFormState(emptyForm(telegramConfigured));
     setShowFormModal(true);
   };
 
@@ -216,6 +241,14 @@ export default function RemindersClient({
       return;
     }
 
+    if (
+      formState.repeatType === "custom_weekly" &&
+      formState.weeklyDays.length === 0
+    ) {
+      showToast("Vui lòng chọn ít nhất một thứ trong tuần.", "error");
+      return;
+    }
+
     setIsSaving(true);
 
     if (editingReminder) {
@@ -228,6 +261,7 @@ export default function RemindersClient({
           date: formatVietnameseDate(formState.date),
           time: formState.time,
           repeatType: formState.repeatType,
+          weeklyDays: formState.weeklyDays,
           channels: formState.channels,
           stepTypes: formState.stepTypes,
         }),
@@ -241,6 +275,26 @@ export default function RemindersClient({
         return;
       }
 
+      setReminderItems((current) =>
+        sortReminderItems(
+          current.map((item) =>
+            item.id === editingReminder.id
+              ? buildReminderItem({
+                  id: item.id,
+                  title: formState.title.trim(),
+                  content: formState.content.trim(),
+                  date: formState.date,
+                  time: formState.time,
+                  repeatType: formState.repeatType,
+                  weeklyDays: formState.weeklyDays,
+                  channels: formState.channels,
+                  stepTypes: formState.stepTypes,
+                  status: "pending",
+                })
+              : item,
+          ),
+        ),
+      );
       showToast("Đã cập nhật lời nhắc.", "success");
     } else {
       const formData = new FormData();
@@ -249,6 +303,9 @@ export default function RemindersClient({
       formData.set("date", formatVietnameseDate(formState.date));
       formData.set("time", formState.time);
       formData.set("repeatType", formState.repeatType);
+      formState.weeklyDays.forEach((weekday) =>
+        formData.append("weeklyDays", String(weekday)),
+      );
       formState.channels.forEach((channel) =>
         formData.append("channels", channel),
       );
@@ -261,7 +318,7 @@ export default function RemindersClient({
         body: formData,
       });
 
-      const result = (await response.json()) as { error?: string };
+      const result = (await response.json()) as { error?: string; id?: string };
 
       if (!response.ok) {
         showToast(result.error || "Không thể tạo lời nhắc.", "error");
@@ -269,6 +326,23 @@ export default function RemindersClient({
         return;
       }
 
+      setReminderItems((current) =>
+        sortReminderItems([
+          buildReminderItem({
+            id: result.id || crypto.randomUUID(),
+            title: formState.title.trim(),
+            content: formState.content.trim(),
+            date: formState.date,
+            time: formState.time,
+            repeatType: formState.repeatType,
+            weeklyDays: formState.weeklyDays,
+            channels: formState.channels,
+            stepTypes: formState.stepTypes,
+            status: "pending",
+          }),
+          ...current,
+        ]),
+      );
       showToast("Đã tạo lời nhắc mới.", "success");
     }
 
@@ -294,6 +368,9 @@ export default function RemindersClient({
       return;
     }
 
+    setReminderItems((current) =>
+      current.filter((item) => item.id !== deletingReminder.id),
+    );
     setIsDeleting(false);
     setShowDeleteModal(false);
     setDeletingReminder(null);
@@ -454,9 +531,10 @@ export default function RemindersClient({
                             </div>
                           </td>
                           <td className="border-y border-sky-400/10 bg-white/[0.03] px-4 py-4 align-top">
-                            <span className="inline-flex rounded-full bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-slate-300">
-                              {mapRepeatType(item.repeatType)}
-                            </span>
+                            <RepeatTypeBadge
+                              repeatType={item.repeatType}
+                              weeklyDays={item.weeklyDays}
+                            />
                           </td>
                           <td className="border-y border-sky-400/10 bg-white/[0.03] px-4 py-4 align-top">
                             <div className="flex flex-wrap gap-2">
@@ -543,7 +621,7 @@ export default function RemindersClient({
                         />
                         <InfoBlock
                           label="Lặp lại"
-                          value={mapRepeatType(item.repeatType)}
+                          value={mapRepeatType(item.repeatType, item.weeklyDays)}
                         />
                       </div>
 
@@ -712,7 +790,7 @@ export default function RemindersClient({
 
                   <label className="block">
                     <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Ngày nhắc
+                      Ngày bắt đầu
                     </span>
                     <DateInput
                       value={formState.date}
@@ -793,10 +871,38 @@ export default function RemindersClient({
                       <option value="once">Một lần</option>
                       <option value="daily">Hằng ngày</option>
                       <option value="weekly">Hằng tuần</option>
+                      <option value="custom_weekly">Theo các thứ trong tuần</option>
                       <option value="monthly">Hằng tháng</option>
                     </select>
                   </label>
                 </div>
+
+                {formState.repeatType === "custom_weekly" && (
+                  <div>
+                    <span className="mb-3 block text-xs font-semibold uppercase tracking-wide text-slate-400">
+                      Các thứ trong tuần
+                    </span>
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {weekdayOptions.map((weekday) => (
+                        <ChannelOption
+                          key={weekday.value}
+                          title={weekday.label}
+                          description="Lặp lại vào ngày này hằng tuần"
+                          checked={formState.weeklyDays.includes(weekday.value)}
+                          onClick={() =>
+                            setFormState((current) => ({
+                              ...current,
+                              weeklyDays: toggleSelectedNumber(
+                                current.weeklyDays,
+                                weekday.value,
+                              ),
+                            }))
+                          }
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 <div>
                   <span className="mb-3 block text-xs font-semibold uppercase tracking-wide text-slate-400">
@@ -819,8 +925,13 @@ export default function RemindersClient({
                     />
                     <ChannelOption
                       title="Telegram"
-                      description="Gửi qua bot riêng của TJPing"
+                      description={
+                        telegramConfigured
+                          ? "Gửi qua bot riêng của TJPing"
+                          : "Chưa cấu hình Telegram"
+                      }
                       checked={formState.channels.includes("telegram")}
+                      disabled={!telegramConfigured}
                       onClick={() =>
                         setFormState((current) => ({
                           ...current,
@@ -829,6 +940,15 @@ export default function RemindersClient({
                             "telegram",
                           ),
                         }))
+                      }
+                      helperAction={
+                        !telegramConfigured
+                          ? {
+                              label: "?",
+                              href: TELEGRAM_SETUP_GUIDE_URL,
+                              title: "Xem hướng dẫn cấu hình Telegram",
+                            }
+                          : undefined
                       }
                     />
                   </div>
@@ -922,6 +1042,52 @@ export default function RemindersClient({
   );
 }
 
+function buildReminderItem({
+  id,
+  title,
+  content,
+  date,
+  time,
+  repeatType,
+  weeklyDays,
+  channels,
+  stepTypes,
+  status,
+}: {
+  id: string;
+  title: string;
+  content: string;
+  date: string;
+  time: string;
+  repeatType: string;
+  weeklyDays: number[];
+  channels: string[];
+  stepTypes: string[];
+  status: string;
+}): ReminderItem {
+  const remindAt = new Date(`${date}T${time}:00+07:00`).toISOString();
+
+  return {
+    id,
+    title,
+    content,
+    remindAt,
+    repeatType,
+    weeklyDays,
+    status,
+    channels: channels.map(mapChannelLabel),
+    stepTypes,
+  };
+}
+
+
+function sortReminderItems(items: ReminderItem[]) {
+  return [...items].sort(
+    (left, right) =>
+      new Date(right.remindAt).getTime() - new Date(left.remindAt).getTime(),
+  );
+}
+
 function reminderToForm(reminder: ReminderItem): ReminderFormState {
   const parts = getBangkokDateTimeParts(reminder.remindAt);
 
@@ -931,6 +1097,7 @@ function reminderToForm(reminder: ReminderItem): ReminderFormState {
     date: `${parts.year}-${parts.month}-${parts.day}`,
     time: `${parts.hour}:${parts.minute}`,
     repeatType: reminder.repeatType,
+    weeklyDays: reminder.weeklyDays,
     channels: reminder.channels.map(toChannelValue),
     stepTypes: reminder.stepTypes,
   };
@@ -993,16 +1160,97 @@ function getBangkokDateTimeParts(value: string) {
   };
 }
 
-function mapRepeatType(value: string) {
+function mapRepeatType(value: string, weeklyDays: number[] = []) {
   const repeatMap: Record<string, string> = {
     once: "Một lần",
     daily: "Hằng ngày",
     weekly: "Hằng tuần",
     monthly: "Hằng tháng",
+    custom_weekly: formatWeeklyDaysLabel(weeklyDays),
   };
 
   return repeatMap[value] || value;
 }
+
+function mapRepeatTypeBadgeLabel(value: string) {
+  const repeatMap: Record<string, string> = {
+    once: "Một lần",
+    daily: "Hằng ngày",
+    weekly: "Hằng tuần",
+    monthly: "Hằng tháng",
+    custom_weekly: "Theo thứ",
+  };
+
+  return repeatMap[value] || value;
+}
+
+function formatWeeklyDaysLabel(weeklyDays: number[]) {
+  if (weeklyDays.length === 0) {
+    return "Theo các thứ trong tuần";
+  }
+
+  return weeklyDays.map(mapWeekdayLabel).join(", ");
+}
+
+function formatWeeklyDaysCompactLabel(weeklyDays: number[]) {
+  if (weeklyDays.length === 0) {
+    return "Chưa chọn ngày";
+  }
+
+  const shortLabels = weeklyDays.map(mapShortWeekdayLabel);
+  if (shortLabels.length <= 3) {
+    return shortLabels.join(", ");
+  }
+
+  return `${shortLabels.slice(0, 3).join(", ")} +${shortLabels.length - 3}`;
+}
+
+function mapWeekdayLabel(day: number) {
+  const labels: Record<number, string> = {
+    1: "Thứ 2",
+    2: "Thứ 3",
+    3: "Thứ 4",
+    4: "Thứ 5",
+    5: "Thứ 6",
+    6: "Thứ 7",
+    7: "Chủ nhật",
+  };
+
+  return labels[day] || `Thứ ${day}`;
+}
+
+function mapShortWeekdayLabel(day: number) {
+  const labels: Record<number, string> = {
+    1: "T2",
+    2: "T3",
+    3: "T4",
+    4: "T5",
+    5: "T6",
+    6: "T7",
+    7: "CN",
+  };
+
+  return labels[day] || `T${day}`;
+}
+
+function mapChannelLabel(value: string) {
+  if (value === "email") return "Email";
+  if (value === "telegram") return "Telegram";
+  return value;
+}
+
+function toggleSelectedValue(values: string[], value: string) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value];
+}
+
+function toggleSelectedNumber(values: number[], value: number) {
+  return values.includes(value)
+    ? values.filter((item) => item !== value)
+    : [...values, value].sort((left, right) => left - right);
+}
+
 
 function mapStepType(value: string) {
   const stepMap: Record<string, string> = {
@@ -1020,28 +1268,31 @@ function toChannelValue(channel: string) {
   return channel.toLowerCase();
 }
 
-function toggleSelectedValue(values: string[], value: string) {
-  return values.includes(value)
-    ? values.filter((item) => item !== value)
-    : [...values, value];
-}
-
 function ChannelOption({
   title,
   description,
   checked,
+  disabled = false,
   onClick,
+  helperAction,
 }: {
   title: string;
   description: string;
   checked: boolean;
+  disabled?: boolean;
   onClick: () => void;
+  helperAction?: {
+    label: string;
+    href: string;
+    title: string;
+  };
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="flex items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-sky-500/10"
+      disabled={disabled}
+      className="flex items-center justify-between rounded-xl border p-4 text-left transition-all hover:bg-sky-500/10 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
       style={{
         borderColor: checked
           ? "rgba(96,165,250,0.28)"
@@ -1049,8 +1300,22 @@ function ChannelOption({
         background: checked ? "rgba(37,99,235,0.1)" : "rgba(255,255,255,0.03)",
       }}
     >
-      <span>
-        <span className="block text-sm font-semibold text-white">{title}</span>
+      <span className="min-w-0">
+        <span className="flex items-center gap-2 text-sm font-semibold text-white">
+          <span>{title}</span>
+          {helperAction ? (
+            <a
+              href={helperAction.href}
+              target="_blank"
+              rel="noreferrer"
+              title={helperAction.title}
+              onClick={(event) => event.stopPropagation()}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full border border-sky-300/20 bg-sky-500/10 text-[11px] font-bold text-sky-200 transition-colors hover:bg-sky-500/20"
+            >
+              {helperAction.label}
+            </a>
+          ) : null}
+        </span>
         <span className="mt-1 block text-xs text-slate-400">{description}</span>
       </span>
       <span
@@ -1072,6 +1337,38 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-2 text-sm font-medium leading-6 text-slate-200">
         {value}
+      </p>
+    </div>
+  );
+}
+
+function RepeatTypeBadge({
+  repeatType,
+  weeklyDays,
+}: {
+  repeatType: string;
+  weeklyDays: number[];
+}) {
+  const badgeLabel = mapRepeatTypeBadgeLabel(repeatType);
+
+  if (repeatType !== "custom_weekly") {
+    return (
+      <span className="inline-flex rounded-full bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-slate-300">
+        {badgeLabel}
+      </span>
+    );
+  }
+
+  return (
+    <div className="min-w-[108px]">
+      <span className="inline-flex rounded-full bg-white/[0.05] px-3 py-1.5 text-xs font-medium text-slate-300">
+        {badgeLabel}
+      </span>
+      <p
+        className="mt-2 text-xs leading-5 text-slate-400"
+        title={formatWeeklyDaysLabel(weeklyDays)}
+      >
+        {formatWeeklyDaysCompactLabel(weeklyDays)}
       </p>
     </div>
   );

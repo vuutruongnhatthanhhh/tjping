@@ -10,7 +10,20 @@ function parseVietnameseDateTime(dateValue: string, timeValue: string) {
     return null;
   }
 
-  return new Date(year, month - 1, day, hour, minute);
+  return new Date(Date.UTC(year, month - 1, day, hour - 7, minute));
+}
+
+function normalizeWeeklyDays(values: string[]) {
+  return [...new Set(values.map(Number))]
+    .filter((day) => Number.isInteger(day) && day >= 1 && day <= 7)
+    .sort((left, right) => left - right);
+}
+
+function getBangkokWeekday(dateValue: Date) {
+  const bangkokDate = new Date(dateValue.getTime() + 7 * 60 * 60 * 1000);
+  const utcDay = bangkokDate.getUTCDay();
+
+  return utcDay === 0 ? 7 : utcDay;
 }
 
 function buildReminderSteps(
@@ -62,11 +75,30 @@ export async function POST(request: Request) {
   const repeatType = String(formData.get("repeatType") || "once");
   const channels = formData.getAll("channels").map(String);
   const stepTypes = formData.getAll("stepTypes").map(String);
+  const weeklyDays = normalizeWeeklyDays(
+    formData.getAll("weeklyDays").map(String),
+  );
   const remindAt = parseVietnameseDateTime(date, time);
 
-  if (!title || !remindAt || channels.length === 0 || stepTypes.length === 0) {
+  if (
+    !title ||
+    !remindAt ||
+    channels.length === 0 ||
+    stepTypes.length === 0 ||
+    (repeatType === "custom_weekly" && weeklyDays.length === 0)
+  ) {
     return NextResponse.json(
       { error: "Thiếu tiêu đề, thời gian, kênh gửi hoặc mốc nhắc." },
+      { status: 400 },
+    );
+  }
+
+  if (
+    repeatType === "custom_weekly" &&
+    !weeklyDays.includes(getBangkokWeekday(remindAt))
+  ) {
+    return NextResponse.json(
+      { error: "Ngày bắt đầu phải thuộc các thứ trong tuần đã chọn." },
       { status: 400 },
     );
   }
@@ -79,6 +111,7 @@ export async function POST(request: Request) {
       content,
       remind_at: remindAt.toISOString(),
       repeat_type: repeatType,
+      weekly_days: repeatType === "custom_weekly" ? weeklyDays : null,
       channels,
       status: "pending",
     })

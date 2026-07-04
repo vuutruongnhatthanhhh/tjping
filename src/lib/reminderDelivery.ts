@@ -2,7 +2,12 @@ import { sendMail } from "@/lib/mailer";
 import { sendTelegramMessage } from "@/lib/telegram";
 
 export type ReminderChannel = "email" | "telegram";
-export type ReminderRepeatType = "once" | "daily" | "weekly" | "monthly";
+export type ReminderRepeatType =
+  | "once"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "custom_weekly";
 export type ReminderStepType =
   | "one_day_before"
   | "one_hour_before"
@@ -15,6 +20,7 @@ export interface DeliveryReminder {
   content: string;
   remindAt: string;
   repeatType: ReminderRepeatType;
+  weeklyDays: number[];
   status: string;
   channels: ReminderChannel[];
 }
@@ -175,6 +181,7 @@ export function getNextOccurrence(
   currentIsoDate: string,
   repeatType: ReminderRepeatType,
   now = new Date(),
+  weeklyDays: number[] = [],
 ) {
   let next = new Date(currentIsoDate);
 
@@ -183,13 +190,17 @@ export function getNextOccurrence(
   }
 
   do {
-    next = addRepeatInterval(next, repeatType);
+    next = addRepeatInterval(next, repeatType, weeklyDays);
   } while (next.getTime() <= now.getTime());
 
   return next.toISOString();
 }
 
-function addRepeatInterval(dateValue: Date, repeatType: ReminderRepeatType) {
+function addRepeatInterval(
+  dateValue: Date,
+  repeatType: ReminderRepeatType,
+  weeklyDays: number[],
+) {
   const next = new Date(dateValue);
 
   if (repeatType === "daily") {
@@ -231,6 +242,52 @@ function addRepeatInterval(dateValue: Date, repeatType: ReminderRepeatType) {
     );
   }
 
+  if (repeatType === "custom_weekly") {
+    return getNextCustomWeeklyDate(next, weeklyDays);
+  }
+
+  return next;
+}
+
+function getNextCustomWeeklyDate(dateValue: Date, weeklyDays: number[]) {
+  const normalizedWeeklyDays = normalizeWeeklyDays(weeklyDays);
+
+  if (normalizedWeeklyDays.length === 0) {
+    const fallback = new Date(dateValue);
+    fallback.setUTCDate(fallback.getUTCDate() + 7);
+    return fallback;
+  }
+
+  const currentWeekday = getBangkokWeekday(dateValue);
+
+  for (const weekday of normalizedWeeklyDays) {
+    if (weekday > currentWeekday) {
+      return addUtcDays(dateValue, weekday - currentWeekday);
+    }
+  }
+
+  return addUtcDays(
+    dateValue,
+    7 - currentWeekday + normalizedWeeklyDays[0],
+  );
+}
+
+function normalizeWeeklyDays(weeklyDays: number[]) {
+  return [...new Set(weeklyDays)]
+    .filter((day) => Number.isInteger(day) && day >= 1 && day <= 7)
+    .sort((left, right) => left - right);
+}
+
+function getBangkokWeekday(dateValue: Date) {
+  const bangkokDate = new Date(dateValue.getTime() + 7 * 60 * 60 * 1000);
+  const utcDay = bangkokDate.getUTCDay();
+
+  return utcDay === 0 ? 7 : utcDay;
+}
+
+function addUtcDays(dateValue: Date, days: number) {
+  const next = new Date(dateValue);
+  next.setUTCDate(next.getUTCDate() + days);
   return next;
 }
 
