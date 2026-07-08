@@ -22,6 +22,9 @@ import DateInput from "@/components/ui/DateInput";
 import ModalOverlay from "@/components/ui/ModalOverlay";
 import ButtonSpinner from "@/components/ui/ButtonSpinner";
 import StatCard from "@/components/ui/StatCard";
+import ReminderFormModal, {
+  getReminderFormError,
+} from "@/components/reminders/ReminderFormModal";
 import { useToast } from "@/components/ui/ToastProvider";
 import { formatDate } from "@/lib/utils";
 
@@ -210,6 +213,8 @@ export default function RemindersClient({
   const [reminderItems, setReminderItems] = useState(reminders);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [formError, setFormError] = useState("");
+  const [formErrorToastKey, setFormErrorToastKey] = useState(0);
   const [searchInput, setSearchInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -260,12 +265,14 @@ export default function RemindersClient({
 
   const openCreateModal = () => {
     setEditingReminder(null);
+    setFormError("");
     setFormState(emptyForm(telegramConfigured));
     setShowFormModal(true);
   };
 
   const openEditModal = (reminder: ReminderItem) => {
     setEditingReminder(reminder);
+    setFormError("");
     setFormState(reminderToForm(reminder));
     setShowFormModal(true);
   };
@@ -279,6 +286,7 @@ export default function RemindersClient({
     if (isSaving) return;
     setShowFormModal(false);
     setEditingReminder(null);
+    setFormError("");
   };
 
   const closeDeleteModal = () => {
@@ -287,8 +295,20 @@ export default function RemindersClient({
     setDeletingReminder(null);
   };
 
+  const showFormError = (message: string) => {
+    setFormError(message);
+    setFormErrorToastKey((current) => current + 1);
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setFormError("");
+
+    const validationError = getReminderFormError(formState);
+    if (validationError) {
+      showFormError(validationError);
+      return;
+    }
 
     if (!formState.title.trim()) {
       showToast("Vui lòng nhập tiêu đề.", "error");
@@ -339,7 +359,7 @@ export default function RemindersClient({
       const result = (await response.json()) as { error?: string };
 
       if (!response.ok) {
-        showToast(result.error || "Không thể cập nhật lời nhắc.", "error");
+        showFormError(result.error || "Không thể cập nhật lời nhắc.");
         setIsSaving(false);
         return;
       }
@@ -364,6 +384,7 @@ export default function RemindersClient({
           ),
         ),
       );
+      setFormError("");
       showToast("Đã cập nhật lời nhắc.", "success");
     } else {
       const formData = new FormData();
@@ -390,7 +411,7 @@ export default function RemindersClient({
       const result = (await response.json()) as { error?: string; id?: string };
 
       if (!response.ok) {
-        showToast(result.error || "Không thể tạo lời nhắc.", "error");
+        showFormError(result.error || "Không thể tạo lời nhắc.");
         setIsSaving(false);
         return;
       }
@@ -412,12 +433,14 @@ export default function RemindersClient({
           ...current,
         ]),
       );
+      setFormError("");
       showToast("Đã tạo lời nhắc mới.", "success");
     }
 
     setIsSaving(false);
     setShowFormModal(false);
     setEditingReminder(null);
+    setFormError("");
     router.refresh();
   };
 
@@ -836,6 +859,21 @@ export default function RemindersClient({
       </main>
 
       {showFormModal && (
+        <ReminderFormModal
+          formState={formState}
+          setFormState={setFormState}
+          onClose={closeFormModal}
+          onSubmit={handleSubmit}
+          isSaving={isSaving}
+          isDemo={isDemo}
+          telegramConfigured={telegramConfigured}
+          isEditing={Boolean(editingReminder)}
+          errorMessage={formError}
+          errorToastKey={formErrorToastKey}
+        />
+      )}
+
+      {false && showFormModal && (
         <ModalOverlay
           onClose={closeFormModal}
           panelClassName="flex h-[88vh] w-full flex-col rounded-t-[28px] border border-sky-400/14 bg-[rgba(7,18,34,0.98)] sm:h-[720px] sm:max-w-2xl sm:rounded-[28px]"
