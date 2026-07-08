@@ -6,15 +6,21 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   ChevronRight,
   Clock3,
+  Facebook,
   LayoutDashboard,
   LogOut,
+  Mailbox,
   Send,
   X,
+  Youtube,
 } from "lucide-react";
 import Logo from "@/components/brand/Logo";
 import { createClient } from "@/lib/supabase/client";
+import { useToast } from "@/components/ui/ToastProvider";
+import { FACEBOOK_URL, YOUTUBE_URL } from "@/lib/env";
 import { cn } from "@/lib/utils";
 import AccountSettingsModal from "./AccountSettingsModal";
+import FeedbackModal from "./FeedbackModal";
 
 interface SidebarProps {
   isOpen: boolean;
@@ -41,6 +47,19 @@ const navItems = [
   },
 ] as const;
 
+const socialLinks = [
+  {
+    href: FACEBOOK_URL,
+    label: "Facebook",
+    icon: <Facebook className="h-4 w-4" />,
+  },
+  {
+    href: YOUTUBE_URL,
+    label: "YouTube",
+    icon: <Youtube className="h-4 w-4" />,
+  },
+] as const;
+
 export default function Sidebar({
   isOpen,
   onClose,
@@ -49,7 +68,9 @@ export default function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const { showToast } = useToast();
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
   const userInitial = (userName || userEmail || "U")[0].toUpperCase();
 
   useEffect(() => {
@@ -60,6 +81,11 @@ export default function Sidebar({
 
   const openAccountModal = () => {
     setShowAccountModal(true);
+    onClose();
+  };
+
+  const openFeedbackModal = () => {
+    setShowFeedbackModal(true);
     onClose();
   };
 
@@ -101,6 +127,7 @@ export default function Sidebar({
             userEmail={userEmail}
             userName={userName}
             userInitial={userInitial}
+            onOpenFeedback={openFeedbackModal}
             onOpenAccount={openAccountModal}
             onLogout={handleLogout}
           />
@@ -132,6 +159,7 @@ export default function Sidebar({
           userEmail={userEmail}
           userName={userName}
           userInitial={userInitial}
+          onOpenFeedback={openFeedbackModal}
           onOpenAccount={openAccountModal}
           onLogout={handleLogout}
         />
@@ -145,6 +173,14 @@ export default function Sidebar({
           onClose={() => setShowAccountModal(false)}
         />
       )}
+
+      {showFeedbackModal && (
+        <FeedbackModal
+          userEmail={userEmail}
+          showToast={showToast}
+          onClose={() => setShowFeedbackModal(false)}
+        />
+      )}
     </>
   );
 }
@@ -156,6 +192,7 @@ function SidebarContent({
   userEmail,
   userName,
   userInitial,
+  onOpenFeedback,
   onOpenAccount,
   onLogout,
 }: {
@@ -165,6 +202,7 @@ function SidebarContent({
   userEmail?: string;
   userName?: string;
   userInitial: string;
+  onOpenFeedback: () => void;
   onOpenAccount: () => void;
   onLogout: () => void;
 }) {
@@ -209,9 +247,22 @@ function SidebarContent({
       </nav>
 
       <div
-        className="border-t px-3 py-4"
+        className="space-y-3 border-t px-3 py-4"
         style={{ borderColor: "rgba(96,165,250,0.15)" }}
       >
+        <div className="flex items-center gap-2 px-1">
+          {socialLinks.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              aria-label={item.label}
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-sky-700/60 bg-sky-950/40 text-sky-200 transition-all duration-200 hover:-translate-y-0.5 hover:border-sky-500/60 hover:bg-sky-500/[0.12] hover:text-white"
+            >
+              {item.icon}
+            </Link>
+          ))}
+        </div>
+
         <button
           type="button"
           onClick={onOpenAccount}
@@ -232,8 +283,17 @@ function SidebarContent({
 
         <button
           type="button"
+          onClick={onOpenFeedback}
+          className="flex w-full items-center gap-3 rounded-xl bg-sky-500/[0.04] px-4 py-3 text-sm font-medium text-sky-100/80 transition-colors hover:bg-sky-500/[0.1]"
+        >
+          <Mailbox className="h-5 w-5" />
+          Hòm thư góp ý
+        </button>
+
+        <button
+          type="button"
           onClick={onLogout}
-          className="mt-3 flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10"
+          className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/10"
         >
           <LogOut className="h-5 w-5" />
           Đăng xuất
@@ -248,6 +308,7 @@ function SidebarNavCollapsed({
   userEmail,
   userName,
   userInitial,
+  onOpenFeedback,
   onOpenAccount,
   onLogout,
 }: {
@@ -255,6 +316,7 @@ function SidebarNavCollapsed({
   userEmail?: string;
   userName?: string;
   userInitial: string;
+  onOpenFeedback: () => void;
   onOpenAccount: () => void;
   onLogout: () => void;
 }) {
@@ -292,9 +354,22 @@ function SidebarNavCollapsed({
       </nav>
 
       <div
-        className="border-t px-2 py-4"
+        className="space-y-2 border-t px-2 py-4"
         style={{ borderColor: "rgba(96,165,250,0.15)" }}
       >
+        <div className="hidden items-center gap-2 px-1 group-hover/sidebar:flex">
+          {socialLinks.map((item) => (
+            <Link
+              key={item.label}
+              href={item.href}
+              aria-label={item.label}
+              className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-sky-700/60 bg-sky-950/40 text-sky-200 transition-all duration-300 hover:-translate-y-0.5 hover:border-sky-500/60 hover:bg-sky-500/[0.12] hover:text-white"
+            >
+              {item.icon}
+            </Link>
+          ))}
+        </div>
+
         <button
           type="button"
           onClick={onOpenAccount}
@@ -322,8 +397,20 @@ function SidebarNavCollapsed({
 
         <button
           type="button"
+          onClick={onOpenFeedback}
+          className="flex w-full items-center rounded-xl bg-sky-500/[0.04] px-[14px] py-2.5 text-sm font-medium text-sky-100/80 transition-all duration-300 hover:bg-sky-500/[0.1] group-hover/sidebar:px-3"
+        >
+          <Mailbox className="h-5 w-5 flex-shrink-0" />
+          <span className="w-0 flex-shrink-0 transition-[width] duration-300 group-hover/sidebar:w-3" />
+          <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 group-hover/sidebar:max-w-[200px] group-hover/sidebar:opacity-100">
+            Hòm thư góp ý
+          </span>
+        </button>
+
+        <button
+          type="button"
           onClick={onLogout}
-          className="mt-3 flex w-full items-center rounded-xl px-[14px] py-2.5 text-sm font-medium text-red-300 transition-all duration-300 hover:bg-red-500/10 group-hover/sidebar:px-3"
+          className="flex w-full items-center rounded-xl px-[14px] py-2.5 text-sm font-medium text-red-300 transition-all duration-300 hover:bg-red-500/10 group-hover/sidebar:px-3"
         >
           <LogOut className="h-5 w-5 flex-shrink-0" />
           <span className="w-0 flex-shrink-0 transition-[width] duration-300 group-hover/sidebar:w-3" />

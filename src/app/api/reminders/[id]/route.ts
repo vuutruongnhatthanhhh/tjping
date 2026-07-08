@@ -106,7 +106,6 @@ export async function PATCH(
 
   if (
     !title ||
-    !content ||
     !remindAt ||
     channels.length === 0 ||
     stepTypes.length === 0 ||

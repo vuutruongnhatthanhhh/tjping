@@ -21,6 +21,18 @@ interface ReminderStepRow {
   step_type: string;
 }
 
+interface DeliveryLogRow {
+  id: string;
+  reminder_id: string;
+  channel: string;
+  status: string;
+  step_type: string;
+  scheduled_at: string;
+  sent_at: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
 interface ChannelSettingsRow {
   telegram_enabled: boolean;
   telegram_chat_id: string | null;
@@ -66,6 +78,18 @@ export default async function RemindersPage() {
           .returns<ReminderStepRow[]>()
       : { data: [] as ReminderStepRow[] };
 
+  const { data: deliveryLogsData } =
+    reminderIds.length > 0
+      ? await supabase
+          .from("delivery_logs")
+          .select(
+            "id,reminder_id,channel,status,step_type,scheduled_at,sent_at,error_message,created_at",
+          )
+          .in("reminder_id", reminderIds)
+          .order("created_at", { ascending: false })
+          .returns<DeliveryLogRow[]>()
+      : { data: [] as DeliveryLogRow[] };
+
   const stepTypesByReminderId = (reminderStepsData || []).reduce<
     Record<string, string[]>
   >((accumulator, item) => {
@@ -74,6 +98,20 @@ export default async function RemindersPage() {
     }
 
     accumulator[item.reminder_id].push(item.step_type);
+    return accumulator;
+  }, {});
+
+  const logsByReminderId = (deliveryLogsData || []).reduce<
+    Record<string, DeliveryLogRow[]>
+  >((accumulator, item) => {
+    if (!accumulator[item.reminder_id]) {
+      accumulator[item.reminder_id] = [];
+    }
+
+    if (accumulator[item.reminder_id].length < 3) {
+      accumulator[item.reminder_id].push(item);
+    }
+
     return accumulator;
   }, {});
 
@@ -87,6 +125,16 @@ export default async function RemindersPage() {
     status: item.status,
     channels: item.channels.map(mapChannel),
     stepTypes: stepTypesByReminderId[item.id] || ["on_time"],
+    logs: (logsByReminderId[item.id] || []).map((log) => ({
+      id: log.id,
+      channel: mapChannel(log.channel),
+      status: log.status,
+      stepType: log.step_type,
+      scheduledAt: log.scheduled_at,
+      sentAt: log.sent_at,
+      errorMessage: log.error_message,
+      createdAt: log.created_at,
+    })),
   }));
 
   return (

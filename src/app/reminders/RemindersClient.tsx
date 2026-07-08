@@ -10,8 +10,10 @@ import {
   Clock3,
   Pencil,
   Plus,
+  Search,
   Send,
   Trash2,
+  X,
   XCircle,
 } from "lucide-react";
 import Header from "@/components/layout/Header";
@@ -33,6 +35,18 @@ export interface ReminderItem {
   status: string;
   channels: string[];
   stepTypes: string[];
+  logs: ReminderLogItem[];
+}
+
+interface ReminderLogItem {
+  id: string;
+  channel: string;
+  status: string;
+  stepType: string;
+  scheduledAt: string;
+  sentAt: string | null;
+  errorMessage: string | null;
+  createdAt: string;
 }
 
 interface RemindersClientProps {
@@ -65,6 +79,18 @@ const demoReminders: ReminderItem[] = [
     status: "pending",
     channels: ["Email", "Telegram"],
     stepTypes: ["one_day_before", "one_hour_before", "on_time"],
+    logs: [
+      {
+        id: "demo-log-1",
+        channel: "Email",
+        status: "sent",
+        stepType: "one_day_before",
+        scheduledAt: "2026-07-03T09:00:00.000Z",
+        sentAt: "2026-07-03T09:00:05.000Z",
+        errorMessage: null,
+        createdAt: "2026-07-03T09:00:05.000Z",
+      },
+    ],
   },
   {
     id: "demo-2",
@@ -76,6 +102,18 @@ const demoReminders: ReminderItem[] = [
     status: "sent",
     channels: ["Email"],
     stepTypes: ["on_time"],
+    logs: [
+      {
+        id: "demo-log-2",
+        channel: "Email",
+        status: "sent",
+        stepType: "on_time",
+        scheduledAt: "2026-07-03T14:30:00.000Z",
+        sentAt: "2026-07-03T14:30:02.000Z",
+        errorMessage: null,
+        createdAt: "2026-07-03T14:30:02.000Z",
+      },
+    ],
   },
   {
     id: "demo-3",
@@ -87,6 +125,18 @@ const demoReminders: ReminderItem[] = [
     status: "failed",
     channels: ["Telegram"],
     stepTypes: ["one_hour_before", "on_time"],
+    logs: [
+      {
+        id: "demo-log-3",
+        channel: "Telegram",
+        status: "failed",
+        stepType: "one_hour_before",
+        scheduledAt: "2026-07-05T07:00:00.000Z",
+        sentAt: null,
+        errorMessage: "Bot chưa kết nối được tới chat.",
+        createdAt: "2026-07-05T07:00:01.000Z",
+      },
+    ],
   },
 ];
 
@@ -160,25 +210,44 @@ export default function RemindersClient({
   const [reminderItems, setReminderItems] = useState(reminders);
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   useEffect(() => {
     setReminderItems(reminders);
   }, [reminders]);
 
-  const displayReminders =
+  const allReminders =
     isDemo && reminderItems.length === 0 ? demoReminders : reminderItems;
-  const pendingCount = displayReminders.filter(
+  const pendingCount = allReminders.filter(
     (item) => item.status === "pending",
   ).length;
-  const sentCount = displayReminders.filter(
+  const sentCount = allReminders.filter(
     (item) => item.status === "sent",
   ).length;
-  const failedCount = displayReminders.filter(
+  const failedCount = allReminders.filter(
     (item) => item.status === "failed",
   ).length;
 
+  const displayReminders = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return allReminders;
+    }
+
+    return allReminders.filter((item) => {
+      const title = item.title.toLowerCase();
+      const content = item.content.toLowerCase();
+
+      return (
+        title.includes(normalizedQuery) || content.includes(normalizedQuery)
+      );
+    });
+  }, [allReminders, searchQuery]);
+
   const nextReminder = useMemo(() => {
-    const sorted = [...displayReminders]
+    const sorted = [...allReminders]
       .filter((item) => item.status === "pending")
       .sort(
         (left, right) =>
@@ -187,7 +256,7 @@ export default function RemindersClient({
       );
 
     return sorted[0] || null;
-  }, [displayReminders]);
+  }, [allReminders]);
 
   const openCreateModal = () => {
     setEditingReminder(null);
@@ -221,8 +290,8 @@ export default function RemindersClient({
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!formState.title.trim() || !formState.content.trim()) {
-      showToast("Vui lòng nhập tiêu đề và nội dung.", "error");
+    if (!formState.title.trim()) {
+      showToast("Vui lòng nhập tiêu đề.", "error");
       return;
     }
 
@@ -378,6 +447,16 @@ export default function RemindersClient({
     router.refresh();
   };
 
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setSearchQuery(searchInput.trim());
+  };
+
+  const handleClearSearch = () => {
+    setSearchInput("");
+    setSearchQuery("");
+  };
+
   return (
     <div className="flex h-screen overflow-hidden bg-mystic-dark">
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
@@ -470,6 +549,38 @@ export default function RemindersClient({
                 <Send className="h-5 w-5 text-sky-300" />
               </div>
 
+              <form
+                onSubmit={handleSearchSubmit}
+                className="mb-4 flex flex-col gap-3 sm:flex-row"
+              >
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    value={searchInput}
+                    onChange={(event) => setSearchInput(event.target.value)}
+                    placeholder="Tìm theo tiêu đề hoặc nội dung"
+                    className="input-mystic w-full pr-20"
+                  />
+                  {searchInput ? (
+                    <button
+                      type="button"
+                      onClick={handleClearSearch}
+                      className="absolute right-12 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 transition-colors hover:bg-white/[0.05] hover:text-white"
+                      aria-label="Xóa tìm kiếm"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  ) : null}
+                  <button
+                    type="submit"
+                    className="absolute right-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-sky-500/15 text-sky-200 transition-colors hover:bg-sky-500/25"
+                    aria-label="Tìm kiếm"
+                  >
+                    <Search className="h-4 w-4" />
+                  </button>
+                </div>
+              </form>
+
               <div className="hidden overflow-x-auto xl:block">
                 <table className="min-w-full border-separate border-spacing-y-3">
                   <colgroup>
@@ -501,8 +612,9 @@ export default function RemindersClient({
                           colSpan={7}
                           className="rounded-2xl border border-sky-400/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-slate-400"
                         >
-                          Chưa có lời nhắc nào. Bấm &quot;Tạo lời nhắc&quot; để
-                          thêm mới.
+                          {searchQuery
+                            ? "Không tìm thấy lời nhắc phù hợp."
+                            : "Chưa có lời nhắc nào. Bấm \"Tạo lời nhắc\" để thêm mới."}
                         </td>
                       </tr>
                     ) : (
@@ -515,6 +627,7 @@ export default function RemindersClient({
                             <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
                               {item.content}
                             </p>
+                            <DeliveryLogList logs={item.logs} className="mt-3" />
                           </td>
                           <td className="border-y border-sky-400/10 bg-white/[0.03] px-4 py-4 align-top text-slate-300">
                             <div className="inline-flex flex-col rounded-xl border border-sky-400/10 bg-sky-500/10 px-3 py-2">
@@ -593,8 +706,9 @@ export default function RemindersClient({
               <div className="space-y-3 xl:hidden">
                 {displayReminders.length === 0 ? (
                   <div className="rounded-2xl border border-sky-400/10 bg-white/[0.03] px-4 py-10 text-center text-sm text-slate-400">
-                    Chưa có lời nhắc nào. Bấm &quot;Tạo lời nhắc&quot; để thêm
-                    mới.
+                    {searchQuery
+                      ? "Không tìm thấy lời nhắc phù hợp."
+                      : "Chưa có lời nhắc nào. Bấm \"Tạo lời nhắc\" để thêm mới."}
                   </div>
                 ) : (
                   displayReminders.map((item) => (
@@ -658,6 +772,8 @@ export default function RemindersClient({
                           </div>
                         </div>
                       </div>
+
+                      <DeliveryLogList logs={item.logs} className="mt-4" />
 
                       <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:justify-end">
                         <button
@@ -772,7 +888,7 @@ export default function RemindersClient({
 
                   <label className="block md:col-span-2">
                     <span className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-400">
-                      Nội dung
+                      Nội dung (không bắt buộc)
                     </span>
                     <textarea
                       className="input-mystic min-h-28 resize-none"
@@ -783,7 +899,7 @@ export default function RemindersClient({
                           content: event.target.value,
                         }))
                       }
-                      placeholder="Nhập nội dung lời nhắc..."
+                      placeholder="Nhập nội dung lời nhắc nếu cần..."
                       disabled={isSaving || isDemo}
                     />
                   </label>
@@ -1053,6 +1169,7 @@ function buildReminderItem({
   channels,
   stepTypes,
   status,
+  logs = [],
 }: {
   id: string;
   title: string;
@@ -1064,6 +1181,7 @@ function buildReminderItem({
   channels: string[];
   stepTypes: string[];
   status: string;
+  logs?: ReminderLogItem[];
 }): ReminderItem {
   const remindAt = new Date(`${date}T${time}:00+07:00`).toISOString();
 
@@ -1077,6 +1195,7 @@ function buildReminderItem({
     status,
     channels: channels.map(mapChannelLabel),
     stepTypes,
+    logs,
   };
 }
 
@@ -1262,6 +1381,20 @@ function mapStepType(value: string) {
   return stepMap[value] || value;
 }
 
+function mapDeliveryStatus(value: string) {
+  const statusMap: Record<string, string> = {
+    pending: "Chờ gửi",
+    sent: "Đã gửi",
+    failed: "Thất bại",
+  };
+
+  return statusMap[value] || value;
+}
+
+function formatLogDateTime(value: string) {
+  return `${formatDate(new Date(value))} · ${formatTime(value)}`;
+}
+
 function toChannelValue(channel: string) {
   if (channel.toLowerCase() === "email") return "email";
   if (channel.toLowerCase() === "telegram") return "telegram";
@@ -1338,6 +1471,85 @@ function InfoBlock({ label, value }: { label: string; value: string }) {
       <p className="mt-2 text-sm font-medium leading-6 text-slate-200">
         {value}
       </p>
+    </div>
+  );
+}
+
+function DeliveryLogList({
+  logs,
+  className = "",
+}: {
+  logs: ReminderLogItem[];
+  className?: string;
+}) {
+  if (logs.length === 0) {
+    return (
+      <div
+        className={`rounded-xl border border-dashed border-sky-400/10 bg-sky-500/5 px-3 py-2 text-xs text-slate-400 ${className}`.trim()}
+      >
+        Chưa có log gửi.
+      </div>
+    );
+  }
+
+  return (
+    <div className={className}>
+      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
+        Log gửi gần đây
+      </p>
+      <div className="space-y-2">
+        {logs.map((log) => {
+          const accentClass =
+            log.status === "sent"
+              ? "border-emerald-400/15 bg-emerald-500/10"
+              : log.status === "failed"
+                ? "border-red-400/15 bg-red-500/10"
+                : "border-amber-400/15 bg-amber-500/10";
+
+          const icon =
+            log.status === "sent" ? (
+              <CheckCircle2 className="h-3.5 w-3.5 text-emerald-300" />
+            ) : log.status === "failed" ? (
+              <XCircle className="h-3.5 w-3.5 text-red-300" />
+            ) : (
+              <Clock3 className="h-3.5 w-3.5 text-amber-300" />
+            );
+
+          return (
+            <div
+              key={log.id}
+              className={`rounded-xl border px-3 py-2 ${accentClass}`}
+            >
+              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-200">
+                <span className="inline-flex items-center gap-1 font-semibold">
+                  {icon}
+                  {mapDeliveryStatus(log.status)}
+                </span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-slate-200">
+                  {log.channel}
+                </span>
+                <span className="rounded-full bg-white/10 px-2 py-0.5 text-[11px] text-slate-300">
+                  {mapStepType(log.stepType)}
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-5 text-slate-300">
+                Lịch: {formatLogDateTime(log.scheduledAt)}
+              </p>
+              <p className="text-xs leading-5 text-slate-400">
+                {log.sentAt
+                  ? `Gửi lúc: ${formatLogDateTime(log.sentAt)}`
+                  : `Tạo log: ${formatLogDateTime(log.createdAt)}`}
+              </p>
+              {log.errorMessage ? (
+                <p className="mt-1 inline-flex items-start gap-1 text-xs leading-5 text-red-200">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <span>{log.errorMessage}</span>
+                </p>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

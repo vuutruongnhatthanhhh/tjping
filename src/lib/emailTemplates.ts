@@ -124,3 +124,115 @@ export function renderPasswordResetEmailHTML({
   </body>
 </html>`;
 }
+
+export function renderFeedbackEmailHTML({
+  accountEmail,
+  fullName,
+  phone,
+  message,
+}: {
+  accountEmail: string;
+  fullName: string;
+  phone: string;
+  message: string;
+}) {
+  const year = new Date().getFullYear();
+  const escapeHtml = (value: string) =>
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  const safeAccountEmail = escapeHtml(accountEmail);
+  const safeFullName = fullName ? escapeHtml(fullName) : "Không có";
+  const safePhone = escapeHtml(phone);
+  const safeMessage = escapeHtml(message).replace(/\n/g, "<br />");
+
+  return `<!doctype html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <style type="text/css">
+      body, table, td, p, a, span, div {
+        font-family: Arial, sans-serif;
+      }
+    </style>
+  </head>
+  <body style="margin:0; padding:20px; background:#eff6ff;">
+    <div style="
+      max-width:560px;
+      margin:0 auto;
+      background:#ffffff;
+      padding:24px;
+      border-radius:12px;
+      border:1px solid #dbeafe;
+    ">
+      <table role="presentation" width="100%" style="border-collapse:collapse; margin:0 0 16px 0;">
+        <tr>
+          <td align="center">
+            <a
+              href="${appUrl}"
+              target="_blank"
+              rel="noopener noreferrer"
+              style="display:inline-block;"
+            >
+              <img
+                src="${logoUrl}"
+                alt="TJPing"
+                width="40"
+                height="40"
+                style="display:block; margin:0 auto;"
+              />
+            </a>
+          </td>
+        </tr>
+      </table>
+
+      <h2 style="margin:0 0 12px 0; font-size:20px; color:#0f172a;">
+        Góp ý mới từ người dùng
+      </h2>
+
+      <div style="margin-bottom:16px; border:1px solid #dbeafe; border-radius:10px; overflow:hidden;">
+        <div style="padding:12px 16px; background:#f8fbff; border-bottom:1px solid #dbeafe;">
+          <p style="margin:0; font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">
+            Email tài khoản
+          </p>
+          <p style="margin:6px 0 0 0; font-size:14px; color:#0f172a;">
+            ${safeAccountEmail}
+          </p>
+        </div>
+        <div style="padding:12px 16px; background:#ffffff; border-bottom:1px solid #dbeafe;">
+          <p style="margin:0; font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">
+            Họ tên
+          </p>
+          <p style="margin:6px 0 0 0; font-size:14px; color:#0f172a;">
+            ${safeFullName}
+          </p>
+        </div>
+        <div style="padding:12px 16px; background:#f8fbff;">
+          <p style="margin:0; font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">
+            Số điện thoại
+          </p>
+          <p style="margin:6px 0 0 0; font-size:14px; color:#0f172a;">
+            ${safePhone}
+          </p>
+        </div>
+      </div>
+
+      <div style="border:1px solid #dbeafe; border-radius:10px; padding:16px; background:#ffffff;">
+        <p style="margin:0 0 10px 0; font-size:12px; font-weight:700; color:#64748b; text-transform:uppercase;">
+          Nội dung góp ý
+        </p>
+        <div style="font-size:14px; line-height:1.6; color:#0f172a;">
+          ${safeMessage}
+        </div>
+      </div>
+
+      <hr style="border:none; border-top:1px solid #dbeafe; margin:20px 0;" />
+
+      ${renderEmailFooter(year)}
+    </div>
+  </body>
+</html>`;
+}
